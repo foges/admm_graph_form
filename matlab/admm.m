@@ -1,16 +1,16 @@
-function [x12, factors] = admm(prox_f, prox_g, A, params, factors)
+function [x12, factors] = admm(prox_f, prox_g, obj_fn, A, params, factors)
 % Generic graph projection splitting solver. Solve
 %
-%  minimize   f(y) + g(x)
-%  subject to y = Ax
+%  minimize    f(y) + g(x)
+%  subject to  y = Ax
 % 
 % given prox_f, prox_g, and A.
 
 % Parse Input.
-if nargin < 4
+if nargin < 5
   params = [];
 end
-if nargin < 5
+if nargin < 6
   factors = [];
 end
 
@@ -42,13 +42,14 @@ if isempty(factors) && ~issparse(A)
 end
 
 if ~quiet
-  fprintf('iter :\t%8s\t%8s\t%8s\t%8s\n', 'r', 'eps_pri', 's', 'eps_dual');
+  fprintf('iter :\t%8s\t%8s\t%8s\t%8s\t%8s\n', 'r', 'eps_pri', 's', ...
+      'eps_dual', 'objective');
 end
 
 for iter = 1:MAXITR
   %  x^{k+1/2} = prox(x^k - \tilde x^k)
-  y12 = prox_f(y - yt, rho);
-  x12 = prox_g(x - xt, rho);
+  y12 = eval_prox(prox_f, y - yt, rho);
+  x12 = eval_prox(prox_g, x - xt, rho);
   z12 = [x12; y12];
 
   zprev = z; 
@@ -78,8 +79,9 @@ for iter = 1:MAXITR
   duares = rho * norm(z - zprev);
 
   if ~quiet && (iter == 1 || mod(iter, 10) == 0)
-    fprintf('%4d :\t%.2e\t%.2e\t%.2e\t%.2e\n', ...
-        iter, prires, eps_pri, duares, eps_dual);
+    obj = obj_fn(x, y);
+    fprintf('%4d :\t%.2e\t%.2e\t%.2e\t%.2e\t%.2e\n', ...
+        iter, prires, eps_pri, duares, eps_dual, obj);
   end
 
   if iter > 2 && prires < eps_pri && duares < eps_dual
@@ -99,6 +101,21 @@ if ~quiet
   fprintf('factorization time: %.2e seconds\n', factor_time);
   fprintf('total iterations: %d\n', iter);
   fprintf('total time: %.2f seconds\n', toc(total_time));
+end
+
+end
+
+function y = eval_prox(f_prox, x, rho)
+% Evaluates the proximal operator(s) on x.  f_prox may either be a 
+% function handle or a cell array of function handles
+
+if iscell(f_prox)
+  y = nan(size(x));
+  for i = 1:length(f_prox)
+    y(i) = f_prox{i}(x(i), rho);
+  end
+else
+  y = f_prox(x, rho);
 end
 
 end
@@ -125,7 +142,7 @@ if issparse(A)
   varargout(3) = {D};
   varargout(4) = {P};
 else
-  if m <= n
+  if m < n
     if isempty(L)
       L = chol(eye(m) + AA);
     end
@@ -148,7 +165,7 @@ end
 function output = get_or_default(input, var, default)
 
 if isfield(input, var)
-  output = getfield(input, var);
+  output = input.(var);
 else
   output = default;
 end

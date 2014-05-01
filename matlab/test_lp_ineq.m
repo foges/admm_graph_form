@@ -1,31 +1,33 @@
-%% Test Non-Negative Least Squares
+%% Test LP in Inequality Form
 %
-%    min. (1/2) ||A * x - b||_2^2 s.t. x >= 0
+%    min. c^T * x  s.t. A * x <= b
 %
 % We transform this problem to
 %
 %  minimize    f(y) + g(x)
 %  subject to  y = A * x
 %
-% where g_i(x_i) = I(x_i >= 0),
-%       f_i(y_i) = (1/2) * (y_i - b_i) ^ 2
+% where g_i(x_i) = c_i * x_i,
+%       f_i(y_i) = I(y_i <= b_i)
 %
 
 % Initialize Data
-rho = 13;
+rho = 1;
 
-m = 100;
-n = 1000;
+m = 1000;
+n = 100;
 
-A = rand(m, n);
-b = randn(m, 1);
+A = randn(m, n);
+b = A * rand(n, 1) + rand(m, 1);
+c = rand(n, 1);
 
-g_prox = @(x, rho) max(x, 0);
-f_prox = @(x, rho) (x * rho + b) / (1 + rho);
-obj_fn = @(x, y) 1/2 * norm(A * x - b) ^ 2;
+g_prox = @(x, rho) x - c / rho;
+f_prox = @(x, rho) min(b, x);
+obj_fn = @(x, y) c' * x;
 
 params.rho = rho;
 params.quiet = false;
+params.MAXITR = 200;
 
 % Solve using ADMM
 tic
@@ -36,9 +38,9 @@ admm_time = toc;
 tic
 cvx_begin quiet
   variable x_cvx(n)
-  minimize(1/2 * (A * x_cvx - b)' * (A * x_cvx - b));
+  minimize(c' * x_cvx);
   subject to
-    x_cvx >= 0;
+    A * x_cvx <= b;
 cvx_end
 cvx_time = toc;
 
@@ -46,6 +48,6 @@ cvx_time = toc;
 fprintf('Relative Error: (admm_optval - cvx_optval) / cvx_optval = %e\n\n', ...
     (obj_fn(x, A * x) - cvx_optval) / cvx_optval)
 fprintf('Constraint Error: min(x_admm) = %e, min(x_cvx) = %e\n\n', ...
-    min(x), min(x_cvx));
+    min(b - A * x), min(b - A * x_cvx));
 fprintf('Norm Difference: norm(x_admm - x_cvx): %e\n\n', norm(x - x_cvx))
 fprintf('Time: ADMM %f sec, CVX %f sec\n\n\n', admm_time, cvx_time) 
