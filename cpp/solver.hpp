@@ -78,6 +78,7 @@ void Solver(AdmmData &admm_data) {
     }
     gsl_vector_sub(xt, x);
 
+    // TODO: Calculate optimality conditions.
 //     double nrm_x = gsl_blas_dnrm2(x);
 //     double nrm_xt = gsl_blas_dnrm2(xt);
 //     double nrm_x12 = gsl_blas_dnrm2(x12);
