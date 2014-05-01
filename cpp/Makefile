@@ -5,7 +5,7 @@
 GSLROOT=/usr/local
 
 CXX=g++
-CXXFLAGS=-g -O3 -Wall -std=c++11 -I$(GSLROOT)/include -fopenmp
+CXXFLAGS=-g -O3 -Wall -Wconversion -std=c++11 -I$(GSLROOT)/include -fopenmp
 LDFLAGS=-lgsl -lgslcblas -lm
 
 main: main.cpp solver.hpp

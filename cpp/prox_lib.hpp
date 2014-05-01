@@ -14,7 +14,7 @@ enum Function { kAbs,      // f(x) = |x|
                 kIndLe0,   // f(x) = I(x <= 0)
                 kNegLog,   // f(x) = -log(x)
                 kLogistic, // f(x) = log(1 + e^x)
-                kMaxNeg0,  // f(x) = max(0, -x) 
+                kMaxNeg0,  // f(x) = max(0, -x)
                 kMaxPos0,  // f(x) = max(0, x)
                 kSquare,   // f(x) = (1/2) x^2
                 kZero};    // f(x) = 0
@@ -239,6 +239,47 @@ void ProxEval(const std::vector<FunctionObj<T>> f_obj, T rho, const T* x_in,
         x_out[i] = ProxZero(x, a, b, c, rho); break;
     }
   }
+}
+
+template <typename T>
+T FuncEval(const std::vector<FunctionObj<T>> f_obj, T rho, const T* x_in) {
+  T sum = 0;
+  #pragma omp parallel for reduction(+:sum)
+  for (unsigned int i = 0; i < f_obj.size(); ++i) {
+    const T x = x_in[i];
+    const T a = f_obj[i].a;
+    const T b = f_obj[i].b;
+    const T c = f_obj[i].c;
+    switch (f_obj[i].f) {
+      case kAbs:
+        sum += FuncAbs(x, a, b, c); break;
+      case kHuber:
+        sum += FuncHuber(x, a, b, c); break;
+      case kIdentity:
+        sum += FuncIdentity(x, a, b, c); break;
+      case kIndBox01:
+        sum += FuncIndBox01(x, a, b, c); break;
+      case kIndEq0:
+        sum += FuncIndEq0(x, a, b, c); break;
+      case kIndGe0:
+        sum += FuncIndGe0(x, a, b, c); break;
+      case kIndLe0:
+        sum += FuncIndLe0(x, a, b, c); break;
+      case kNegLog:
+        sum += FuncNegLog(x, a, b, c); break;
+      case kLogistic:
+        sum += FuncLogistic(x, a, b, c); break;
+      case kMaxNeg0:
+        sum += FuncMaxNeg0(x, a, b, c); break;
+      case kMaxPos0:
+        sum += FuncMaxPos0(x, a, b, c); break;
+      case kSquare:
+        sum += FuncSquare(x, a, b, c); break;
+      case kZero:
+        sum += FuncZero(x, a, b, c); break;
+    }
+  }
+  return sum;
 }
 
 #endif /* PROX_LIB_ */
