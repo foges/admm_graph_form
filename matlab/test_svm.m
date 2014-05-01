@@ -46,7 +46,7 @@ obj_fn = @(x, y) 1 / 2 * norm(x(1:n))^2 + ...
 
 params.rho = rho;
 params.quiet = true;
-params.MAXITR = 300;
+params.MAXITR = 1000;
 
 % Solve using ADMM
 tic
@@ -67,5 +67,3 @@ fprintf('Relative Error: (admm_optval - cvx_optval) / cvx_optval = %e\n\n', ...
     (obj_fn(x, A * x) - cvx_optval) / cvx_optval)
 fprintf('Norm Difference: norm(x_admm - x_cvx): %e\n\n', norm(x - x_cvx))
 fprintf('Time: ADMM %f sec, CVX %f sec\n\n\n', admm_time, cvx_time) 
-
-plot([x x_cvx])
