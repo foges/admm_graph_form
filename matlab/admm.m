@@ -23,6 +23,7 @@ quiet  = get_or_default(params, 'quiet', false);
 L = get_or_default(factors, 'L', []);
 D = get_or_default(factors, 'D', []);
 P = get_or_default(factors, 'P', []);
+AA = get_or_default(factors, 'AA', []);
 
 % Variables.
 total_time = tic;
@@ -33,7 +34,7 @@ y = zeros(m, 1);     yt = zeros(m, 1);
 z = zeros(n + m, 1); zt = zeros(n + m, 1);
 
 % Precompute AAt or AtA.
-if isempty(factors) && ~issparse(A)
+if isempty(AA) && ~issparse(A)
   if m < n
     AA = A * A';
   else
@@ -96,6 +97,7 @@ end
 factors.L = L;
 factors.D = D;
 factors.P = P;
+factors.AA = AA;
 
 if ~quiet
   fprintf('factorization time: %.2e seconds\n', factor_time);
