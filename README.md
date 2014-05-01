@@ -33,6 +33,8 @@ The following functions are currently supported
   + `f(x) = (1/2) x^2`
   + `f(x) = 0`
   
+More functions can be added by modifying the proximal operator header file: `<admm_graph_form>/cpp/prox_lib.hpp`.
+
 Languages / Frameworks
 ======================
 Three different implementations of the solver are either planned or already supported:
