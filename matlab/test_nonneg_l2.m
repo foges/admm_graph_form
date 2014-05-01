@@ -20,15 +20,15 @@ m = 1000;
 n = 100;
 
 A = 1 / n * rand(m, n);
-b = randn(m, 1);
+b = randn(m, 1) + 1;
 
 g_prox = @(x, rho) max(x, 0);
 f_prox = @(x, rho) (x * rho + b) / (1 + rho);
 obj_fn = @(x, y) 1/2 * norm(A * x - b) ^ 2;
 
 params.rho = rho;
-params.quiet = true;
-params.MAXITR = 200;
+params.quiet = false;
+params.MAXITR = 1000;
 
 % Solve using ADMM
 tic

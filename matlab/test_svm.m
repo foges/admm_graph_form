@@ -17,7 +17,7 @@
 %   http://www.stanford.edu/~boyd/papers/admm/svm/linear_svm_example.html
 rng(0, 'twister')
 
-rho = 1.0;
+rho = 1;
 lambda = 1.0;
 
 n = 100;
