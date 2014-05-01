@@ -89,7 +89,7 @@ template <typename T>
 T ProxNegLog(T x, T a, T b, T c, T rho) {
   T rho_ = rho / (c * a * a);
   T x_ = a * x - b;
-  T z  = (x_ + sqrt(x_ * x_ + 4 / rho_)) / 2;
+  T z = (x_ + sqrt(x_ * x_ + 4 / rho_)) / 2;
   return (z + b) / a;
 }
 
@@ -102,8 +102,9 @@ template <typename T>
 T ProxMaxNeg0(T x, T a, T b, T c, T rho) {
   T rho_ = rho / (c * a * a);
   T x_ = a * x - b;
-  T z  = x_ >= static_cast<T>(-1) / rho_
-      ? static_cast<T>(0) : x_ + static_cast<T>(1) / rho_;
+  T z = x_ >= static_cast<T>(0) ? x_ : static_cast<T>(0);
+  z = x_ <= -static_cast<T>(1) / rho_
+      ? x_ + static_cast<T>(1) / rho_ : z;
   return (z + b) / a;
 }
 
@@ -111,8 +112,9 @@ template <typename T>
 T ProxMaxPos0(T x, T a, T b, T c, T rho) {
   T rho_ = rho / (c * a * a);
   T x_ = a * x - b;
-  T z  = x_ <= static_cast<T>(1) / rho_
-      ? static_cast<T>(0) : x_ - static_cast<T>(1) / rho_;
+  T z = x_ <= static_cast<T>(0) ? x_ : static_cast<T>(0);
+  z = x_ >= static_cast<T>(1) / rho_
+      ? x_ - static_cast<T>(1) / rho_ : z;
   return (z + b) / a;
 }
 
@@ -202,7 +204,7 @@ T FuncZero(T x, T a, T b, T c) {
 template <typename T>
 void ProxEval(const std::vector<FunctionObj<T>> f_obj, T rho, const T* x_in,
               T* x_out) {
-  // #pragma omp parallel for
+  #pragma omp parallel for
   for (unsigned int i = 0; i < f_obj.size(); ++i) {
     const T x = x_in[i];
     const T a = f_obj[i].a;

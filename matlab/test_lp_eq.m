@@ -13,13 +13,15 @@
 %
 
 % Initialize Data
+rng(0, 'twister')
+
 rho = 1.0;
 
 m = 100;
 n = 1000;
 
 A = rand(m, n);
-b = A * rand(n, 1);
+b = 1 / n * A * rand(n, 1);
 c = rand(n, 1);
 
 g_prox = @(x, rho) max(x, 0);
@@ -32,7 +34,7 @@ obj_fn = @(x, y) c' * x;
 
 params.rho = rho;
 params.quiet = true;
-params.MAXITR = 1000;
+params.MAXITR = 300;
 
 % Solve using ADMM
 tic

@@ -19,7 +19,7 @@ struct AdmmData {
 };
 
 void Solver(AdmmData &admm_data) {
-  const unsigned int kMaxIter = 100;
+  const unsigned int kMaxIter = 1000;
   const double kRelTol = 1e-2;
   const double kAbsTol = 1e-4;
 
@@ -77,6 +77,22 @@ void Solver(AdmmData &admm_data) {
       gsl_blas_dgemv(CblasTrans, 1.0, &A.matrix, yt, 1.0, x);
     }
     gsl_vector_sub(xt, x);
+
+//     double nrm_x = gsl_blas_dnrm2(x);
+//     double nrm_xt = gsl_blas_dnrm2(xt);
+//     double nrm_x12 = gsl_blas_dnrm2(x12);
+//     double nrm_y = gsl_blas_dnrm2(y);
+//     double nrm_yt = gsl_blas_dnrm2(yt);
+//     double nrm_y12 = gsl_blas_dnrm2(y12);
+//     double nrm_z = sqrt(nrm_x * nrm_x + nrm_y * nrm_y);
+//     double nrm_zt = sqrt(nrm_xt * nrm_xt + nrm_yt * nrm_yt);
+//     double nrm_z12 = sqrt(nrm_x12 * nrm_x12 + nrm_y12 * nrm_y12);
+//     double eps_pri = sqrt(n) * kAbsTol + kRelTol * max(nrm_z12, nrm_z);
+//     double eps_dual = sqrt(n) * kAbsTol + kRelTol admm_data.rho *
+//         max(nrm_z12, nrm_zt);
+// 
+
+
   }
 
   for (unsigned int i = 0; i < m; ++i)
