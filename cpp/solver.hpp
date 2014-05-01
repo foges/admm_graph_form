@@ -114,8 +114,8 @@ void Solver(AdmmData &admm_data) {
       printf("%4d :  %.3e  %.3e  %.3e  %.3e  %.3e\n",
              k, nrm_r, eps_pri, nrm_s, eps_dual, obj);
 
-		if (converged)
-			break;
+    if (converged)
+      break;
 
     // Make copy of z.
     gsl_vector_memcpy(z_prev, z);
