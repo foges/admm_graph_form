@@ -45,7 +45,7 @@ obj_fn = @(x, y) 1 / 2 * norm(x(1:n))^2 + ...
     lambda * sum(max(0, A * x + 1));
 
 params.rho = rho;
-params.quiet = true;
+params.quiet = false;
 params.MAXITR = 1000;
 
 % Solve using ADMM

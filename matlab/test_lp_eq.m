@@ -34,7 +34,7 @@ obj_fn = @(x, y) c' * x;
 
 params.rho = rho;
 params.quiet = true;
-params.MAXITR = 300;
+params.MAXITR = 1000;
 
 % Solve using ADMM
 tic
