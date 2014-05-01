@@ -53,9 +53,7 @@ void Solver(AdmmData &admm_data) {
 
   // Compute cholesky decomposition of (I + A^TA) or (I + AA^T)
   CBLAS_TRANSPOSE_t mult_type = is_skinny ? CblasTrans : CblasNoTrans;
-  double time = timer();
   gsl_blas_dsyrk(CblasLower, mult_type, 1.0, &A.matrix, 0.0, AA);
-  printf("Syrk Time: %f sec\n", timer() - time);
   gsl_matrix_set_identity(I);
   gsl_matrix_memcpy(L, AA);
   gsl_matrix_add(L, I);
@@ -110,7 +108,7 @@ void Solver(AdmmData &admm_data) {
         FuncEval(admm_data.g, admm_data.rho, x.vector.data);
 
 
-    // Evaluate stopping conditions.
+    // Evaluate stopping criteria.
     bool converged = nrm_r <= eps_pri and nrm_s <= eps_dual;
     if (k % 10 == 0 || converged)
       printf("%4d :  %.3e  %.3e  %.3e  %.3e  %.3e\n",

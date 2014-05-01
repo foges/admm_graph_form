@@ -5,8 +5,8 @@
 
 // Non-Negative Least Squares
 double test1() {
-  size_t m = 9000;
-  size_t n = 1000;
+  size_t m = 1000;
+  size_t n = 200;
   std::vector<double> A(m * n);
   std::vector<double> b(m);
   std::vector<double> x(n);
@@ -38,7 +38,7 @@ double test1() {
   }
 
   Solver(admm_data);
-
+  
   return 0;
 }
 
