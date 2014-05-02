@@ -47,7 +47,7 @@ Three different implementations of the solver are either planned or already supp
 Problem Classes
 ===============
 
-The solver can be used for the following classes of (linearly constrained) problems
+Among others, the solver can be used for the following classes of (linearly constrained) problems
 
   + Least Squares
   + Lasso, Ridge Regression, Logistic Regression, Huber Fitting and Elastic Net Regulariation 
