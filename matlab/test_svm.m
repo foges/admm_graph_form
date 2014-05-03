@@ -52,8 +52,8 @@ function results = test_svm(m, n, rho, quiet)
 %                 + time_cvx: Time required by CVX to solve problem.
 %
 %   References:
-%   http://www.stanford.edu/~boyd/papers/admm/svm/linear_svm_example.html
-%     Formulation was taken form this example.
+%     http://www.stanford.edu/~boyd/papers/admm/svm/linear_svm_example.html
+%       Formulation was taken form this example.
 
 % Parse inputs.
 if nargin < 2

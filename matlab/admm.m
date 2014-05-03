@@ -59,20 +59,20 @@ function [x12, y12, factors] = admm(prox_f, prox_g, obj_fn, A, params, factors)
 %   factors   - A structure of Cholesky decomposition factors.
 %               See description of corresponding input. 
 %
-% References: 
-%   http://www.stanford.edu/~boyd/papers/block_splitting.html 
-%     Block Splitting for Distributed Optimization -- N. Parikh and S. Boyd
+%   References: 
+%     http://www.stanford.edu/~boyd/papers/block_splitting.html 
+%       Block Splitting for Distributed Optimization -- N. Parikh and S. Boyd
 %
-%   http://www.stanford.edu/~boyd/papers/block_splitting.html
-%     Distributed Optimization and Statistical Learning via the Alternating
-%     Direction Method of Multipliers -- S. Boyd, N. Parikh, E. Chu,
-%     B. Peleato, and J. Eckstein
+%     http://www.stanford.edu/~boyd/papers/block_splitting.html
+%       Distributed Optimization and Statistical Learning via the Alternating
+%       Direction Method of Multipliers -- S. Boyd, N. Parikh, E. Chu,
+%       B. Peleato, and J. Eckstein
 %
-%   http://www.stanford.edu/~boyd/papers/prox_algs.html
-%     Proximal Algorithms -- N. Parikh and S. Boyd
+%     http://www.stanford.edu/~boyd/papers/prox_algs.html
+%       Proximal Algorithms -- N. Parikh and S. Boyd
 %
-% Authors:
-%   Neal Parikh, Chris Fougner.
+%   Authors:
+%     Neal Parikh, Chris Fougner.
 %
 
 % Parse Input.
