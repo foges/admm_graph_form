@@ -40,7 +40,7 @@ Languages / Frameworks
 Three different implementations of the solver are either planned or already supported:
 
   1. MATLAB: A MATLAB implementation along with examples can be found in the `<admm_graph_form>/matlab` directory.
-  2. C++/BLAS/LAPACK/OpenMP: A multithreaded `C++` version can be found in the `<admm_graph_form>/cpp` directory. For best performance it's important to link to  a tuned BLAS or LAPACK library, such as ATLAS.
+  2. C++/BLAS/LAPACK/OpenMP: A multithreaded `C++` version can be found in the `<admm_graph_form>/cpp` directory. For best performance it's important to link to  a tuned BLAS or LAPACK library, such as ATLAS or Accelerate Framework.
   3. C++/cuBLAS/CULA/CUDA: A GPU implementation is planned.
 
 
