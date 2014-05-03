@@ -1,4 +1,4 @@
-function [x12, factors] = admm(prox_f, prox_g, obj_fn, A, params, factors)
+function [x12, y12, factors] = admm(prox_f, prox_g, obj_fn, A, params, factors)
 %%ADMM Generic graph projection splitting solver.
 %   Solves problems in the form
 %
@@ -12,7 +12,7 @@ function [x12, factors] = admm(prox_f, prox_g, obj_fn, A, params, factors)
 % 
 %   Optional Inputs: params, factors
 %
-%   Inputs
+%   Inputs:
 %   prox_f    - Function handle or cell array of function handles, which
 %               calculates returns the proximal operator of the function f.
 %               If prox_f is a function handle, then it must accept vector
@@ -29,7 +29,7 @@ function [x12, factors] = admm(prox_f, prox_g, obj_fn, A, params, factors)
 %
 %   A         - Complicating constraint matrix of dimension m * n.
 %
-%   Optional Input
+%   Optional Inputs:
 %   params    - Structure of parameters, containing any of the following
 %               fields:
 %                 + ABSTOL (default 1e-4): Absolute tolerance to which the
@@ -42,6 +42,7 @@ function [x12, factors] = admm(prox_f, prox_g, obj_fn, A, params, factors)
 %                   operator.
 %                 + quiet (default false): Set flag to true, to disable
 %                   output to console.
+%
 %   factors   - Structure containing pre-computed factors. If any
 %               one field is missing, then all of them will be re-computed.
 %               The fields are:
@@ -51,7 +52,9 @@ function [x12, factors] = admm(prox_f, prox_g, obj_fn, A, params, factors)
 %                   results in the smaller dimension.
 %
 %   Outputs:
-%   x         - The solution to the optimization problem
+%   x         - The partial solution x^\star to the optimization problem
+%
+%   y         - The partial solution y^\star to the optimization problem
 %   
 %   factors   - A structure of Cholesky decomposition factors.
 %               See description of corresponding input. 

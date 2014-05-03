@@ -7,13 +7,13 @@ function results = test_nonneg_l2(m, n, rho, quiet)
 %
 %   We transform this problem into
 %
-%    minimize    f(y) + g(x)
-%    subject to  y = A * x
+%     minimize    f(y) + g(x)
+%     subject to  y = A * x
 %
 %   where g_i(x_i) = I(x_i >= 0),
-%         f_i(y_i) = (1/2) * (y_i - b_i) ^ 2
+%         f_i(y_i) = (1/2) * (y_i - b_i) ^ 2.
 %
-%   Test data is generated as follows
+%   Test data are generated as follows
 %     - Entries in A are generated uniformly at random in [0, 1/n].
 %     - Entries in b are generated such that the optimal unconstrained
 %       solution x^\star is approximately equal to [1..1 -1..-1]^T, 
@@ -36,11 +36,11 @@ function results = test_nonneg_l2(m, n, rho, quiet)
 %   results   - Structure containg test results. Fields are:
 %                 + rel_err_obj: Relative error of the objective, as
 %                   compared to the solution obtained from CVX, defined as
-%                   (admm_optval - cvx_optval) / cvx_optval.
+%                   (admm_optval - cvx_optval) / abs(cvx_optval).
 %                 + rel_err_soln: Relative difference in solution between
-%                   CVX and ADMM, define as 
+%                   CVX and ADMM, defined as 
 %                   norm(x_admm - x_cvx) / norm(x_cvx).
-%                 + max_violation: Maximum constraint violation (nan if no 
+%                 + max_violation: Maximum constraint violation (nan if
 %                   problem has no constraints).
 %                 + avg_violation: Average constraint violation.
 %                 + time_admm: Time required by ADMM to solve problem.
@@ -70,7 +70,7 @@ b = A * [ones(n_half, 1); -ones(n_2ndhalf, 1)]  + 0.01 * randn(m, 1);
 % Declare Proximal operators
 g_prox = @(x, rho) max(x, 0);
 f_prox = @(x, rho) (x * rho + b) / (1 + rho);
-obj_fn = @(x, y) 1/2 * norm(A * x - b) ^ 2;
+obj_fn = @(x, y) 1 / 2 * norm(A * x - b) ^ 2;
 
 % Initialize ADMM input
 params.rho = rho;
@@ -98,7 +98,7 @@ results.rel_err_obj = ...
     (obj_fn(x_admm, A * x_admm) - cvx_optval) / cvx_optval;
 results.rel_diff_soln = norm(x_admm - x_cvx) / norm(x_cvx);
 results.max_violation = abs(min(min(x_admm), 0));
-results.avg_violation = mean(abs(x_admm(x_admm < 0)));
+results.avg_violation = mean(abs(min(x_admm, 0)));
 results.time_admm = time_admm;
 results.time_cvx = time_cvx;
 

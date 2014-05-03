@@ -1,45 +1,90 @@
-%% Test LP in Equality Form 
+function results = test_lp_eq(m, n, rho, quiet)
+%%TEST_LP_EQ Test ADMM on an inequality constrained LP.
+%   Compares ADMM to CVX when solving the problem
 %
-%    min. c^T * x  s.t. A * x = b, x >= 0
+%     minimize    c^T * x
+%     subject to  Ax = b
+%                 x >= 0
 %
-% We transform this problem to
+%   We transform this problem to
 %
-%  minimize    f(y) + g(x)
-%  subject to  y = [A; c^T] * x
+%     minimize    f(y) + g(x)
+%     subject to  y = [A; c^T] * x
 %
-% where g(x_i)        = I(x_u >= 0),
-%       f_{1..m}(y_i) = I(y_i = b_i),
-%       f_{m+1}(y_i)  = y_i
+%   where g(x_i)        = I(x_u >= 0),
+%         f_{1..m}(y_i) = I(y_i = b_i),
+%         f_{m+1}(y_i)  = y_i.
 %
+%   Test data are generated as follows
+%     - The entries in A and c are drawn uniformly in [0, 1].
+%     - To generate b, we first choose a vector v with entries drawn
+%       uniformly from [0, 1], we assign b = A * v. This ensures that b is
+%       in the range of A.
+%
+%   results = test_lp_eq()
+%   results = test_lp_eq(m, n, rho, quiet)
+% 
+%   Optional Inputs: (m, n), rho, quiet
+%
+%   Optional Inputs:
+%   (m, n)    - (default 200, 1000) Dimensions of the matrix A.
+%   
+%   rho       - (default 1.0) Penalty parameter to proximal operators.
+% 
+%   quiet     - (default false) Set flag to true, to disable output to
+%               console.
+%
+%   Outputs:
+%   results   - Structure containg test results. Fields are:
+%                 + rel_err_obj: Relative error of the objective, as
+%                   compared to the solution obtained from CVX, defined as
+%                   (admm_optval - cvx_optval) / abs(cvx_optval).
+%                 + rel_err_soln: Relative difference in solution between
+%                   CVX and ADMM, defined as 
+%                   norm(x_admm - x_cvx) / norm(x_cvx).
+%                 + max_violation: Maximum constraint violation (nan if 
+%                   problem has no constraints).
+%                 + avg_violation: Average constraint violation.
+%                 + time_admm: Time required by ADMM to solve problem.
+%                 + time_cvx: Time required by CVX to solve problem.
+%
+
+% Parse inputs.
+if nargin < 2
+  m = 200;
+  n = 1000;
+elseif m > n
+  error('A must be a fat matrix')
+end
+if nargin < 3
+  rho = 1.0;
+end
+if nargin < 4
+  quiet = false;
+end
 
 % Initialize Data
 rng(0, 'twister')
 
-rho = 1.0;
-
-m = 100;
-n = 1000;
-
 A = rand(m, n);
-b = 1 / n * A * rand(n, 1);
+b = A * rand(n, 1);
 c = rand(n, 1);
 
+% Declare Proximal operators
 g_prox = @(x, rho) max(x, 0);
-f_prox = cell(m, 1);
-for i = 1:m
-  f_prox{i} = @(x, rho) b(i);
-end
-f_prox{m+1} = @(x, rho) x - 1 / rho;
+f_prox = @(x, rho) [b; x(end) - 1 / rho];
 obj_fn = @(x, y) c' * x;
 
+% Initialize ADMM input
 params.rho = rho;
-params.quiet = true;
+params.quiet = quiet;
 params.MAXITR = 1000;
+params.RELTOL = 1e-3;
 
 % Solve using ADMM
 tic
-[x, factors] = admm(f_prox, g_prox, obj_fn, [A; c'], params);
-admm_time = toc;
+x_admm = admm(f_prox, g_prox, obj_fn, [A; c'], params);
+time_admm = toc;
 
 % Solve using CVX
 tic
@@ -50,12 +95,25 @@ cvx_begin quiet
     A * x_cvx == b;
     x_cvx >= 0;
 cvx_end
-cvx_time = toc;
+time_cvx = toc;
 
-% Print Error Metrics
-fprintf('Relative Error: (admm_optval - cvx_optval) / cvx_optval = %e\n\n', ...
-    (obj_fn(x, A * x) - cvx_optval) / cvx_optval)
-fprintf('Constraint Error: max(abs(b - A * x_admm)) = %e, max(abs(b - A * x_cvx)) = %e\n\n', ...
-    max(abs(b - A * x)), max(abs(b - A * x_cvx)));
-fprintf('Norm Difference: norm(x_admm - x_cvx): %e\n\n', norm(x - x_cvx))
-fprintf('Time: ADMM %f sec, CVX %f sec\n\n\n', admm_time, cvx_time) 
+% Compute error metrics
+results.rel_err_obj = ...
+    (obj_fn(x_admm, A * x_admm) - cvx_optval) / abs(cvx_optval);
+results.rel_diff_soln = norm(x_admm - x_cvx) / norm(x_cvx);
+results.max_violation = max([abs(b - A * x_admm); max(x_admm, 0)]);
+results.avg_violation = mean([abs(b - A * x_admm); max(x_admm, 0)]);
+results.time_admm = time_admm;
+results.time_cvx = time_cvx;
+
+% Print error metrics
+if ~quiet
+  fprintf('\nRelative Error of Objective: %e\n', results.rel_err_obj)
+  fprintf('Relative Difference in Solution: %e\n', results.rel_diff_soln)
+  fprintf('Maximum Constraint Violation: %e\n', results.max_violation)
+  fprintf('Average Constraint Violation: %e\n', results.avg_violation)
+  fprintf('Time ADMM: %e\n', results.time_admm)
+  fprintf('Time CVX: %e\n', results.time_cvx)
+end
+
+end
