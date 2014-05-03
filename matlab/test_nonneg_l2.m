@@ -2,13 +2,13 @@ function results = test_nonneg_l2(m, n, rho, quiet)
 %%TEST_NONNEG_L2 Test ADMM on non-negative least squares.
 %   Compares ADMM to CVX when solving the problem
 %
-%     minimize    (1/2) ||Ax - b||_2^2 
-%     subject to  x >= 0
+%     minimize    (1/2) ||Ax - b||_2^2,
+%     subject to  x >= 0.
 %
 %   We transform this problem into
 %
-%     minimize    f(y) + g(x)
-%     subject to  y = A * x
+%     minimize    f(y) + g(x),
+%     subject to  y = A * x.
 %
 %   where g_i(x_i) = I(x_i >= 0),
 %         f_i(y_i) = (1/2) * (y_i - b_i) ^ 2.
@@ -59,7 +59,7 @@ if nargin < 4
   quiet = false;
 end
 
-% Initialize Variables
+% Initialize Variables.
 rng(0, 'twister')
 
 n_half = floor(2 * n / 3);
@@ -67,23 +67,23 @@ n_2ndhalf = n - n_half;
 A = 1 / n * rand(m, n);
 b = A * [ones(n_half, 1); -ones(n_2ndhalf, 1)]  + 0.01 * randn(m, 1);
 
-% Declare Proximal operators
+% Declare proximal operators.
 g_prox = @(x, rho) max(x, 0);
 f_prox = @(x, rho) (x * rho + b) / (1 + rho);
 obj_fn = @(x, y) 1 / 2 * norm(A * x - b) ^ 2;
 
-% Initialize ADMM input
+% Initialize ADMM input.
 params.rho = rho;
 params.quiet = quiet;
 params.MAXITR = 1000;
 params.RELTOL = 1e-4;
 
-% Solve using ADMM
+% Solve using ADMM.
 tic
 x_admm = admm(f_prox, g_prox, obj_fn, A, params);
 time_admm = toc;
 
-% Solve using CVX
+% Solve using CVX.
 tic
 cvx_begin quiet
   variable x_cvx(n)
@@ -93,7 +93,7 @@ cvx_begin quiet
 cvx_end
 time_cvx = toc;
 
-% Compute error metrics
+% Compute error metrics.
 results.rel_err_obj = ...
     (obj_fn(x_admm, A * x_admm) - cvx_optval) / cvx_optval;
 results.rel_diff_soln = norm(x_admm - x_cvx) / norm(x_cvx);
@@ -102,7 +102,7 @@ results.avg_violation = mean(abs(min(x_admm, 0)));
 results.time_admm = time_admm;
 results.time_cvx = time_cvx;
 
-% Print error metrics
+% Print error metrics.
 if ~quiet
   fprintf('\nRelative Error of Objective: %e\n', results.rel_err_obj)
   fprintf('Relative Difference in Solution: %e\n', results.rel_diff_soln)

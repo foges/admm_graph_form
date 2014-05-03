@@ -2,8 +2,8 @@ function [x12, y12, factors] = admm(prox_f, prox_g, obj_fn, A, params, factors)
 %%ADMM Generic graph projection splitting solver.
 %   Solves problems in the form
 %
-%     minimize    f(y) + g(x)
-%     subject to  y = Ax
+%     minimize    f(y) + g(x),
+%     subject to  y = Ax.
 % 
 %   where the proximal operators of the functions f and g are known.
 %
@@ -60,19 +60,19 @@ function [x12, y12, factors] = admm(prox_f, prox_g, obj_fn, A, params, factors)
 %               See description of corresponding input. 
 %
 %   References: 
-%     http://www.stanford.edu/~boyd/papers/block_splitting.html 
-%       Block Splitting for Distributed Optimization -- N. Parikh and S. Boyd
+%   http://www.stanford.edu/~boyd/papers/block_splitting.html 
+%     Block Splitting for Distributed Optimization -- N. Parikh and S. Boyd
 %
-%     http://www.stanford.edu/~boyd/papers/block_splitting.html
-%       Distributed Optimization and Statistical Learning via the Alternating
-%       Direction Method of Multipliers -- S. Boyd, N. Parikh, E. Chu,
-%       B. Peleato, and J. Eckstein
+%   http://www.stanford.edu/~boyd/papers/block_splitting.html
+%     Distributed Optimization and Statistical Learning via the Alternating
+%     Direction Method of Multipliers -- S. Boyd, N. Parikh, E. Chu,
+%     B. Peleato, and J. Eckstein
 %
-%     http://www.stanford.edu/~boyd/papers/prox_algs.html
-%       Proximal Algorithms -- N. Parikh and S. Boyd
+%   http://www.stanford.edu/~boyd/papers/prox_algs.html
+%     Proximal Algorithms -- N. Parikh and S. Boyd
 %
 %   Authors:
-%     Neal Parikh, Chris Fougner.
+%   Neal Parikh, Chris Fougner.
 %
 
 % Parse Input.
@@ -202,8 +202,8 @@ end
 function [z, L, D, P] = project_graph(v, A, AA, L, D, P)
 % Project v onto the graph of A. This is equivalent to solving
 %
-%    minimize    (1/2) ||x ? c||_2^2 + (1/2)||y ? d||_2^2
-%    subject to  y = Ax
+%    minimize    (1/2) ||x - c||_2^2 + (1/2) ||y - d||_2^2,
+%    subject to  y = Ax.
 % 
 % Supports factorization caching and both dense and sparse A.
 

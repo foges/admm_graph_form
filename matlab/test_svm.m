@@ -2,7 +2,7 @@ function results = test_svm(m, n, rho, quiet)
 %%TEST_SVM Test ADMM on non-negative least squares.
 %   Compares ADMM to CVX when solving the problem
 %
-%     minimize    (1/2) ||w||_2^2 +  \lambda \sum (a_i^T * [w; b] + 1)_+
+%     minimize    (1/2) ||w||_2^2 + \lambda \sum (a_i^T * [w; b] + 1)_+.
 %
 %   We transform this problem to
 %
@@ -52,8 +52,8 @@ function results = test_svm(m, n, rho, quiet)
 %                 + time_cvx: Time required by CVX to solve problem.
 %
 %   References:
-%     http://www.stanford.edu/~boyd/papers/admm/svm/linear_svm_example.html
-%       Formulation was taken form this example.
+%   http://www.stanford.edu/~boyd/papers/admm/svm/linear_svm_example.html
+%     Formulation was taken form this example.
 
 % Parse inputs.
 if nargin < 2
@@ -71,7 +71,7 @@ if nargin < 4
   quiet = false;
 end
 
-% Initialize Data
+% Initialize Data.
 rng(0, 'twister')
 
 lambda = 1.0;
@@ -81,24 +81,24 @@ x = [randn(n, N) + ones(n, N), randn(n, N) - ones(n, N)];
 y = [ones(1, N), -ones(1, N)];
 A = [-((ones(n, 1) * y) .* x)', -y'];
 
-% Declare Proximal operators
+% Declare proximal operators.
 f_prox = @(x, rho) max(0, x + 1 - lambda / rho) + min(0, x + 1) - 1;
 g_prox = @(x, rho) [rho * x(1:end-1) / (1 + rho); x(end)];
 obj_fn = @(x, y) 1 / 2 * norm(x(1:n)) ^ 2 + lambda * sum(max(0, y + 1));
 
-% Initialize ADMM input
+% Initialize ADMM input.
 params.rho = rho;
 params.quiet = quiet;
 params.MAXITR = 2000;
 params.RELTOL = 1e-4;
 params.ABSTOL = 5e-5;
 
-% Solve using ADMM
+% Solve using ADMM.
 tic
 x_admm = admm(f_prox, g_prox, obj_fn, A, params);
 time_admm = toc;
 
-% Solve using CVX
+% Solve using CVX.
 tic
 cvx_begin quiet
   variable x_cvx(n+1)
@@ -107,7 +107,7 @@ cvx_begin quiet
 cvx_end
 time_cvx = toc;
 
-% Compute error metrics
+% Compute error metrics.
 results.rel_err_obj = ...
     (obj_fn(x_admm, A * x_admm) - cvx_optval) / abs(cvx_optval);
 results.rel_diff_soln = norm(x_admm - x_cvx) / norm(x_cvx);
@@ -116,7 +116,7 @@ results.avg_violation = nan;
 results.time_admm = time_admm;
 results.time_cvx = time_cvx;
 
-% Print error metrics
+% Print error metrics.
 if ~quiet
   fprintf('\nRelative Error of Objective: %e\n', results.rel_err_obj)
   fprintf('Relative Difference in Solution: %e\n', results.rel_diff_soln)

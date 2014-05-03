@@ -2,13 +2,13 @@ function results = test_lp_ineq(m, n, rho, quiet)
 %%TEST_LP_INEQ Test ADMM on an inequality constrained LP.
 %   Compares ADMM to CVX when solving the problem
 %
-%     minimize    c^T * x
-%     subject to  Ax <= b
+%     minimize    c^T * x,
+%     subject to  Ax <= b.
 %
 %   We transform this problem to
 %
-%     minimize    f(y) + g(x)
-%     subject to  y = A * x
+%     minimize    f(y) + g(x),
+%     subject to  y = A * x.
 %
 %   where g_i(x_i) = c_i * x_i,
 %         f_i(y_i) = I(y_i <= b_i).
@@ -68,30 +68,30 @@ if nargin < 4
   quiet = false;
 end
 
-% Initialize Data
+% Initialize Data.
 rng(0, 'twister')
 
 A = [-1 / n *rand(m - n, n); -eye(n)];
 b = A * rand(n, 1)  + 0.2 * rand(m, 1);
 c = rand(n, 1);
 
-% Declare Proximal operators
+% Declare proximal operators.
 g_prox = @(x, rho) x - c / rho;
 f_prox = @(x, rho) min(b, x);
 obj_fn = @(x, y) c' * x;
 
-% Initialize ADMM input
+% Initialize ADMM input.
 params.rho = rho;
 params.quiet = quiet;
 params.MAXITR = 1000;
 params.RELTOL = 1e-3;
 
-% Solve using ADMM
+% Solve using ADMM.
 tic
 x_admm = admm(f_prox, g_prox, obj_fn, A, params);
 time_admm = toc;
 
-% Solve using CVX
+% Solve using CVX.
 tic
 cvx_begin quiet
   variable x_cvx(n)
@@ -101,7 +101,7 @@ cvx_begin quiet
 cvx_end
 time_cvx = toc;
 
-% Compute error metrics
+% Compute error metrics.
 results.rel_err_obj = ...
     (obj_fn(x_admm, A * x_admm) - cvx_optval) / abs(cvx_optval);
 results.rel_diff_soln = norm(x_admm - x_cvx) / norm(x_cvx);
