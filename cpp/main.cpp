@@ -1,12 +1,12 @@
 #include <random>
-#include <iostream>
+#include <vector>
 
 #include "solver.hpp"
 
 // Non-Negative Least Squares
 double test1() {
   size_t m = 1000;
-  size_t n = 200;
+  size_t n = 10000;
   std::vector<double> A(m * n);
   std::vector<double> b(m);
   std::vector<double> x(n);
@@ -27,18 +27,15 @@ double test1() {
   admm_data.rho = 1.0;
 
   admm_data.f.reserve(m);
-  for (unsigned int i = 0; i < m; ++i) {
-    b[i] = n_dist(generator) + 1;
-    admm_data.f.emplace_back(kSquare, 1.0, b[i], 1.0);
-  }
+  for (unsigned int i = 0; i < m; ++i)
+    admm_data.f.emplace_back(kSquare, 1.0, n_dist(generator) + 1);
 
   admm_data.g.reserve(n);
-  for (unsigned int i = 0; i < n; ++i) {
-    admm_data.g.emplace_back(kIndGe0, 1.0, 0.0, 1.0);
-  }
+  for (unsigned int i = 0; i < n; ++i)
+    admm_data.g.emplace_back(kIndGe0);
 
   Solver(admm_data);
-  
+
   return 0;
 }
 

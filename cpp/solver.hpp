@@ -1,12 +1,13 @@
 #ifndef SOLVER_HPP_
 #define SOLVER_HPP_
 
-#include <vector>
-
 #include <gsl/gsl_blas.h>
 #include <gsl/gsl_linalg.h>
 #include <gsl/gsl_matrix.h>
 #include <gsl/gsl_vector.h>
+
+#include <algorithm>
+#include <vector>
 
 #include "prox_lib.hpp"
 #include "timer.hpp"
@@ -20,15 +21,15 @@ struct AdmmData {
   size_t m, n;
 };
 
-void Solver(AdmmData &admm_data) {
+void Solver(AdmmData *admm_data) {
   const unsigned int kMaxIter = 1000;
   const double kRelTol = 1e-2;
   const double kAbsTol = 1e-4;
 
   // Extract values from admm_data
-  size_t n = admm_data.n;
-  size_t m = admm_data.m;
-  gsl_matrix_view A = gsl_matrix_view_array(admm_data.A, m, n);
+  size_t n = admm_data->n;
+  size_t m = admm_data->m;
+  gsl_matrix_view A = gsl_matrix_view_array(admm_data->A, m, n);
 
   bool is_skinny = m >= n;
   size_t min_dim  = std::min(m, n);
@@ -70,8 +71,8 @@ void Solver(AdmmData &admm_data) {
     // Evaluate Proximal Operators
     gsl_vector_sub(&x.vector, &xt.vector);
     gsl_vector_sub(&y.vector, &yt.vector);
-    ProxEval(admm_data.g, admm_data.rho, x.vector.data, x12.vector.data);
-    ProxEval(admm_data.f, admm_data.rho, y.vector.data, y12.vector.data);
+    ProxEval(admm_data->g, admm_data->rho, x.vector.data, x12.vector.data);
+    ProxEval(admm_data->f, admm_data->rho, y.vector.data, y12.vector.data);
 
     // Project and Update Dual Variables
     gsl_vector_add(&xt.vector, &x12.vector);
@@ -97,19 +98,19 @@ void Solver(AdmmData &admm_data) {
     double nrm_zt = gsl_blas_dnrm2(zt);
     double nrm_z12 = gsl_blas_dnrm2(z12);
     double eps_pri = sqrtn * kAbsTol + kRelTol * std::max(nrm_z12, nrm_z);
-    double eps_dual = sqrtn * kAbsTol + kRelTol * admm_data.rho * nrm_zt;
+    double eps_dual = sqrtn * kAbsTol + kRelTol * admm_data->rho * nrm_zt;
 
     // Compute ||r^k||_2 and ||s^k||_2.
     gsl_vector_sub(z12, z);
     gsl_vector_sub(z_prev, z);
     double nrm_r = gsl_blas_dnrm2(z12);
-    double nrm_s = admm_data.rho * gsl_blas_dnrm2(z_prev);
-    double obj = FuncEval(admm_data.f, admm_data.rho, y.vector.data) +
-        FuncEval(admm_data.g, admm_data.rho, x.vector.data);
+    double nrm_s = admm_data->rho * gsl_blas_dnrm2(z_prev);
+    double obj = FuncEval(admm_data->f, admm_data->rho, y.vector.data) +
+        FuncEval(admm_data->g, admm_data->rho, x.vector.data);
 
 
     // Evaluate stopping criteria.
-    bool converged = nrm_r <= eps_pri and nrm_s <= eps_dual;
+    bool converged = nrm_r <= eps_pri && nrm_s <= eps_dual;
     if (k % 10 == 0 || converged)
       printf("%4d :  %.3e  %.3e  %.3e  %.3e  %.3e\n",
              k, nrm_r, eps_pri, nrm_s, eps_dual, obj);
@@ -123,9 +124,9 @@ void Solver(AdmmData &admm_data) {
 
   // Copy results to output.
   for (unsigned int i = 0; i < m; ++i)
-    admm_data.y[i] = gsl_vector_get(&y12.vector, i);
+    admm_data->y[i] = gsl_vector_get(&y12.vector, i);
   for (unsigned int i = 0; i < n; ++i)
-    admm_data.x[i] = gsl_vector_get(&x12.vector, i);
+    admm_data->x[i] = gsl_vector_get(&x12.vector, i);
 
   // Free up memory.
   gsl_matrix_free(L);

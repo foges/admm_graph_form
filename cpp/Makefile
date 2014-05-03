@@ -3,8 +3,9 @@ GSLROOT=/usr/local
 CXX=g++
 CXXFLAGS=-g -O3 -Wall -Wconversion -std=c++11 -I$(GSLROOT)/include -fopenmp
 LDFLAGS=-lgsl -lgslcblas -lm
+LDFLAGS=-framework Accelerate -lgsl -lgslcblas -lm
 
-main: main.cpp solver.hpp
+main: main.cpp solver.hpp prox_lib.hpp
 	$(CXX) $(CXXFLAGS) $(LDFLAGS) $< -o $@
 
 clean:
