@@ -1,4 +1,4 @@
-function results = test_lp_eq(m, n, rho, quiet)
+function results = test_lp_eq(m, n, rho, quiet, save_mat)
 %%TEST_LP_EQ Test ADMM on an inequality constrained LP.
 %   Compares ADMM to CVX when solving the problem
 %
@@ -22,9 +22,9 @@ function results = test_lp_eq(m, n, rho, quiet)
 %       in the range of A.
 %
 %   results = test_lp_eq()
-%   results = test_lp_eq(m, n, rho, quiet)
+%   results = test_lp_eq(m, n, rho, quiet, save_mat)
 % 
-%   Optional Inputs: (m, n), rho, quiet
+%   Optional Inputs: (m, n), rho, quiet, save_mat
 %
 %   Optional Inputs:
 %   (m, n)    - (default 200, 1000) Dimensions of the matrix A.
@@ -33,6 +33,8 @@ function results = test_lp_eq(m, n, rho, quiet)
 % 
 %   quiet     - (default false) Set flag to true, to disable output to
 %               console.
+%
+%   save_mat  - (default false) Save data matrices to MatrixMarket files.
 %
 %   Outputs:
 %   results   - Structure containg test results. Fields are:
@@ -62,6 +64,9 @@ end
 if nargin < 4
   quiet = false;
 end
+if nargin < 5
+  save_mat = false;
+end
 
 % Initialize Data.
 rng(0, 'twister')
@@ -69,6 +74,13 @@ rng(0, 'twister')
 A = rand(m, n);
 b = A * rand(n, 1);
 c = rand(n, 1);
+
+% Export Matrices
+if save_mat
+  mmwrite('data/A_lp_eq.dat', A, 'Matrix A for test_lp_eq.m')
+  mmwrite('data/b_lp_eq.dat', b, 'Matrix b for test_lp_eq.m')
+  mmwrite('data/c_lp_eq.dat', c, 'Matrix c for test_lp_eq.m')
+end
 
 % Declare proximal operators.
 g_prox = @(x, rho) max(x, 0);
@@ -78,8 +90,8 @@ obj_fn = @(x, y) c' * x;
 % Initialize ADMM input.
 params.rho = rho;
 params.quiet = quiet;
-params.MAXITR = 1000;
-params.RELTOL = 1e-3;
+params.MAXITR = 2000;
+params.RELTOL = 5e-5;
 
 % Solve using ADMM.
 tic
@@ -101,8 +113,8 @@ time_cvx = toc;
 results.rel_err_obj = ...
     (obj_fn(x_admm, A * x_admm) - cvx_optval) / abs(cvx_optval);
 results.rel_diff_soln = norm(x_admm - x_cvx) / norm(x_cvx);
-results.max_violation = max([abs(b - A * x_admm); max(x_admm, 0)]);
-results.avg_violation = mean([abs(b - A * x_admm); max(x_admm, 0)]);
+results.max_violation = max([abs(b - A * x_admm); max(-x_admm, 0)]);
+results.avg_violation = mean([abs(b - A * x_admm); max(-x_admm, 0)]);
 results.time_admm = time_admm;
 results.time_cvx = time_cvx;
 

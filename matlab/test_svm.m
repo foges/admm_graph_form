@@ -1,4 +1,4 @@
-function results = test_svm(m, n, rho, quiet)
+function results = test_svm(m, n, rho, quiet, save_mat)
 %%TEST_SVM Test ADMM on non-negative least squares.
 %   Compares ADMM to CVX when solving the problem
 %
@@ -25,9 +25,9 @@ function results = test_svm(m, n, rho, quiet)
 %     - The parameter lambda is set to 1.0.
 %
 %   results = test_svm()
-%   results = test_svm(m, n, rho, quiet)
+%   results = test_svm(m, n, rho, quiet, save_mat)
 % 
-%   Optional Inputs: (m, n), rho, quiet
+%   Optional Inputs: (m, n), rho, quiet, save_mat
 %
 %   Optional Inputs:
 %   (m, n)    - (default 1000, 100) Dimensions of the matrix A.
@@ -36,6 +36,8 @@ function results = test_svm(m, n, rho, quiet)
 % 
 %   quiet     - (default false) Set flag to true, to disable output to
 %               console.
+%
+%   save_mat  - (default false) Save data matrices to MatrixMarket files.
 %
 %   Outputs:
 %   results   - Structure containg test results. Fields are:
@@ -70,6 +72,9 @@ end
 if nargin < 4
   quiet = false;
 end
+if nargin < 5
+  save_mat = false;
+end
 
 % Initialize Data.
 rng(0, 'twister')
@@ -80,6 +85,11 @@ N = m / 2;
 x = [randn(n, N) + ones(n, N), randn(n, N) - ones(n, N)];
 y = [ones(1, N), -ones(1, N)];
 A = [-((ones(n, 1) * y) .* x)', -y'];
+
+% Export Matrices
+if save_mat
+  mmwrite('data/A_svm.dat', A, 'Matrix A for test_svm.m')
+end
 
 % Declare proximal operators.
 f_prox = @(x, rho) max(0, x + 1 - lambda / rho) + min(0, x + 1) - 1;

@@ -1,4 +1,4 @@
-function results = test_lp_ineq(m, n, rho, quiet)
+function results = test_lp_ineq(m, n, rho, quiet, save_mat)
 %%TEST_LP_INEQ Test ADMM on an inequality constrained LP.
 %   Compares ADMM to CVX when solving the problem
 %
@@ -27,9 +27,9 @@ function results = test_lp_ineq(m, n, rho, quiet)
 %       x^\star has reasonably uniform entries.
 %
 %   results = test_lp_ineq()
-%   results = test_lp_ineq(m, n, rho, quiet)
+%   results = test_lp_ineq(m, n, rho, quiet, save_mat)
 % 
-%   Optional Inputs: (m, n), rho, quiet
+%   Optional Inputs: (m, n), rho, quiet, save_mat
 %
 %   Optional Inputs:
 %   (m, n)    - (default 1000, 200) Dimensions of the matrix A.
@@ -38,6 +38,8 @@ function results = test_lp_ineq(m, n, rho, quiet)
 % 
 %   quiet     - (default false) Set flag to true, to disable output to
 %               console.
+%
+%   save_mat  - (default false) Save data matrices to MatrixMarket files.
 %
 %   Outputs:
 %   results   - Structure containg test results. Fields are:
@@ -67,6 +69,9 @@ end
 if nargin < 4
   quiet = false;
 end
+if nargin < 5
+  save_mat = false;
+end
 
 % Initialize Data.
 rng(0, 'twister')
@@ -74,6 +79,13 @@ rng(0, 'twister')
 A = [-1 / n *rand(m - n, n); -eye(n)];
 b = A * rand(n, 1)  + 0.2 * rand(m, 1);
 c = rand(n, 1);
+
+% Export Matrices
+if save_mat
+  mmwrite('data/A_lp_ineq.dat', A, 'Matrix A for test_lp_ineq.m')
+  mmwrite('data/b_lp_ineq.dat', b, 'Matrix b for test_lp_ineq.m')
+  mmwrite('data/c_lp_ineq.dat', c, 'Matrix c for test_lp_ineq.m')
+end
 
 % Declare proximal operators.
 g_prox = @(x, rho) x - c / rho;

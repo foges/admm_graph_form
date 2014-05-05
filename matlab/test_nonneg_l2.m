@@ -1,4 +1,4 @@
-function results = test_nonneg_l2(m, n, rho, quiet)
+function results = test_nonneg_l2(m, n, rho, quiet, save_mat)
 %%TEST_NONNEG_L2 Test ADMM on non-negative least squares.
 %   Compares ADMM to CVX when solving the problem
 %
@@ -20,9 +20,9 @@ function results = test_nonneg_l2(m, n, rho, quiet)
 %       guaranteeing that some constraints will be active.
 %
 %   results = test_nonneg_l2()
-%   results = test_nonneg_l2(m, n, rho, quiet)
+%   results = test_nonneg_l2(m, n, rho, quiet, save_mat)
 % 
-%   Optional Inputs: (m, n), rho, quiet
+%   Optional Inputs: (m, n), rho, quiet, save_mat
 %
 %   Optional Inputs:
 %   (m, n)    - (default 1000, 200) Dimensions of the matrix A.
@@ -31,6 +31,8 @@ function results = test_nonneg_l2(m, n, rho, quiet)
 % 
 %   quiet     - (default false) Set flag to true, to disable output to
 %               console.
+%
+%   save_mat  - (default false) Save data matrices to MatrixMarket files.
 %
 %   Outputs:
 %   results   - Structure containg test results. Fields are:
@@ -58,6 +60,9 @@ end
 if nargin < 4
   quiet = false;
 end
+if nargin < 5
+  quiet = false;
+end
 
 % Initialize Variables.
 rng(0, 'twister')
@@ -66,6 +71,12 @@ n_half = floor(2 * n / 3);
 n_2ndhalf = n - n_half;
 A = 1 / n * rand(m, n);
 b = A * [ones(n_half, 1); -ones(n_2ndhalf, 1)]  + 0.01 * randn(m, 1);
+
+% Export Matrices
+if save_mat
+  mmwrite('data/A_nonneg_l2.dat', A, 'Matrix A for test_nonneg_l2.m')
+  mmwrite('data/b_nonneg_l2.dat', b, 'Matrix b for test_nonneg_l2.m')
+end
 
 % Declare proximal operators.
 g_prox = @(x, rho) max(x, 0);
