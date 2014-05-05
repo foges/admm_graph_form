@@ -3,7 +3,12 @@
 
 #include "solver.hpp"
 
+
 // Non-Negative Least Squares.
+//   minimize    (1/2) ||Ax - b||_2^2
+//   subject to  x >= 0.
+//
+// See <admm_graph_form>/matlab/test_nonneg_l2.m for detailed description.
 double test1() {
   printf("\nNon-Negative Least Squares.\n");
   size_t m = 1000;
@@ -50,7 +55,12 @@ double test1() {
   return 0;
 }
 
+
 // Linear program in inequality form.
+//   minimize    c^T * x
+//   subject to  Ax <= b.
+//
+// See <admm_graph_form>/matlab/test_lp_ineq.m for detailed description.
 double test2() {
   printf("\nLinear Program in Inequality Form.\n");
   size_t m = 1000;
@@ -99,7 +109,13 @@ double test2() {
   return 0;
 }
 
+
 // Linear program in equality form.
+//   minimize    c^T * x
+//   subject to  Ax = b
+//               x >= 0.
+//
+// See <admm_graph_form>/matlab/test_lp_eq.m for detailed description.
 double test3() {
   printf("\nLinear Program in Equality Form.\n");
   size_t m = 200;
@@ -150,7 +166,11 @@ double test3() {
   return 0;
 }
 
+
 // Support Vector Machine.
+//   minimize    (1/2) ||w||_2^2 + \lambda \sum (a_i^T * [w; b] + 1)_+.
+//
+// See <admm_graph_form>/matlab/test_svm.m for detailed description.
 double test4() {
   printf("\nSupport Vector Machine.\n");
   size_t m = 1000;
@@ -197,7 +217,6 @@ double test4() {
   Solver(&admm_data);
   return 0;
 }
-
 
 int main() {
   test1();

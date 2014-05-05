@@ -127,7 +127,7 @@ void Solver(AdmmData *admm_data) {
     admm_data->y[i] = gsl_vector_get(&y12.vector, i);
   for (unsigned int i = 0; i < n; ++i)
     admm_data->x[i] = gsl_vector_get(&x12.vector, i);
-  
+
   // Free up memory.
   gsl_matrix_free(L);
   gsl_matrix_free(AA);
