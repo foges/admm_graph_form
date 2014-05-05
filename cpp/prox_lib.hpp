@@ -22,6 +22,8 @@ enum Function { kAbs,       // f(x) = |x|
 
 /**
  * Object associated with the generic function c * f(a * x - b) + d * x.
+ *
+ * Parameters a and c default to 1, while b and d default to 0.
  */
 template <typename T>
 struct FunctionObj {
@@ -42,7 +44,7 @@ struct FunctionObj {
 };
 
 
-/* Useful Local Functions */
+/* Local Functions */
 namespace {
 // Evalution of max(0, x).
 template <typename T>
@@ -284,6 +286,7 @@ void ProxEval(const std::vector<FunctionObj<T>> f_obj, T rho, const T* x_in,
     }
   }
 }
+
 
 /**
  * Evaluates function f_obj.func(x_in) -> x_out element-wise.

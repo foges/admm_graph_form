@@ -26,13 +26,9 @@ double test1() {
   for (unsigned int i = 0; i < m * n; ++i)
     A[i] = 1.0 / static_cast<double>(n) * u_dist(generator);
 
-  AdmmData admm_data;
-  admm_data.A = A.data();
+  AdmmData admm_data(A.data(), m, n);
   admm_data.x = x.data();
   admm_data.y = y.data();
-  admm_data.m = m;
-  admm_data.n = n;
-  admm_data.rho = 1.0;
 
   admm_data.f.reserve(m);
   for (unsigned int i = 0; i < m; ++i) {
@@ -79,13 +75,9 @@ double test2() {
   for (unsigned int i = static_cast<unsigned int>(n * n); i < m * n; ++i)
     A[i] = i % n == 0 ? -1.0 : 0;
 
-  AdmmData admm_data;
-  admm_data.A = A.data();
+  AdmmData admm_data(A.data(), m, n);
   admm_data.x = x.data();
   admm_data.y = y.data();
-  admm_data.m = m;
-  admm_data.n = n;
-  admm_data.rho = 1.0;
 
   // Generate b according to:
   //   b = A * rand(n, 1) + 0.2 * rand(m, 1)
@@ -133,13 +125,9 @@ double test3() {
   for (unsigned int i = 0; i < (m + 1) * n; ++i)
     A[i] = 1.0 / static_cast<double>(n) * u_dist(generator);
 
-  AdmmData admm_data;
-  admm_data.A = A.data();
+  AdmmData admm_data(A.data(), m + 1, n);
   admm_data.x = x.data();
   admm_data.y = y.data();
-  admm_data.m = m + 1;
-  admm_data.n = n;
-  admm_data.rho = 1.0;
 
   // Generate b according to:
   //   v = rand(n, 1)
@@ -195,13 +183,9 @@ double test4() {
     A[i * (n + 1) + n] = -sign_yi;
   }
 
-  AdmmData admm_data;
-  admm_data.A = A.data();
+  AdmmData admm_data(A.data(), m, n + 1);
   admm_data.x = x.data();
   admm_data.y = y.data();
-  admm_data.m = m;
-  admm_data.n = n + 1;
-  admm_data.rho = 1.0;
 
   double lambda = 1.0;
 
