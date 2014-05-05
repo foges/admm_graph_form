@@ -8,9 +8,9 @@ The fist step is to formulate the problem in such a way that `A`, `f` and `g` ar
 
   + `AdmmData::A`: Pointer to the `A` matrix from the problem description. It is assumed to be in row-major format. 
   + `(AdmmData::m, AdmmData::n)`: Dimensions of `A`.
-  + (`AdmmData::x, AdmmData::y`): Pointers to pre-allocated memory locations, where the solution will be stored.
+  + `(AdmmData::x, AdmmData::y)`: Pointers to pre-allocated memory locations, where the solution will be stored.
   + `AdmmData::rho`: Penalty parameter for the proximal operator. A value of 1.0 is typical.
-  + (`AdmmData::f, AdmmData::g`): Vectors of function objects. The `i`'th element corresponds to the term `f_i`  (respectively `g_j`) in the objective. Refer to the Proximal Operator Library section for a description of function objects.
+  + `(AdmmData::f, AdmmData::g)`: Vectors of function objects. The `i`'th element corresponds to the term `f_i`  (respectively `g_j`) in the objective. Refer to the Proximal Operator Library section for a description of function objects.
 
 
 Proximal Operator Library
