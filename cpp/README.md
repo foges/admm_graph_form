@@ -27,7 +27,7 @@ The enumerated function types are:
 
 | enum      | Mathematical Function |
 | --------- |:----------------------| 
-| kAbs      | f(x) = \|x\|          |
+| kAbs      | f(x) = &#124;x&#124;  |
 | kHuber    | f(x) = huber(x)       |
 | kIdentity | f(x) = x              |  
 | kIndBox01 | f(x) = I(0 <= x <= 1) |
