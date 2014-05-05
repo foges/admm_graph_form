@@ -1,5 +1,5 @@
 function results = test_svm(m, n, rho, quiet, save_mat)
-%%TEST_SVM Test ADMM on non-negative least squares.
+%%TEST_SVM Test ADMM on SVM fitting.
 %   Compares ADMM to CVX when solving the problem
 %
 %     minimize    (1/2) ||w||_2^2 + \lambda \sum (a_i^T * [w; b] + 1)_+.
@@ -7,14 +7,14 @@ function results = test_svm(m, n, rho, quiet, save_mat)
 %   We transform this problem to
 %
 %     minimize    f(y) + g(x)
-%     subject to  y = A * x
+%     subject to  y = A * x,
 %
-%   where g_{1..n-1}(x_i) = (1/2) * w ^ 2, 
-%         g_{n}(x_i)      = 0,
+%   where g_{1..n}(x_i)   = (1/2) * w ^ 2
+%         g_{n+1}(x_i)    = 0
 %         f_(y_i)         = lambda * max(y_i + 1, 0).
 %
 %   Test data are generated as follows
-%     - Entries in A are given by the formula -y_j * (x_j^T - 1), where x_j
+%     - Entries in A are given by the formula -y_j * [x_j^T, 1], where x_j
 %       is a "feature vector" and y_j is either -1 or +1 depending on
 %       which class the j'th feature belongs to. The x_j belonging to the
 %       first class are drawn from a normal distribution with mean [1..1]^T
@@ -82,9 +82,9 @@ rng(0, 'twister')
 lambda = 1.0;
 N = m / 2;
 
-x = [randn(n, N) + ones(n, N), randn(n, N) - ones(n, N)];
-y = [ones(1, N), -ones(1, N)];
-A = [-((ones(n, 1) * y) .* x)', -y'];
+x = [randn(N, n) + ones(N, n); randn(N, n) - ones(N, n)];
+y = [ones(N, 1); -ones(N, 1)];
+A = [(-y * ones(1, n)) .* x, -y];
 
 % Export Matrices
 if save_mat

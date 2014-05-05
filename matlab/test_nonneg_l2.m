@@ -2,15 +2,15 @@ function results = test_nonneg_l2(m, n, rho, quiet, save_mat)
 %%TEST_NONNEG_L2 Test ADMM on non-negative least squares.
 %   Compares ADMM to CVX when solving the problem
 %
-%     minimize    (1/2) ||Ax - b||_2^2,
+%     minimize    (1/2) ||Ax - b||_2^2
 %     subject to  x >= 0.
 %
 %   We transform this problem into
 %
-%     minimize    f(y) + g(x),
-%     subject to  y = A * x.
+%     minimize    f(y) + g(x)
+%     subject to  y = A * x,
 %
-%   where g_i(x_i) = I(x_i >= 0),
+%   where g_i(x_i) = I(x_i >= 0)
 %         f_i(y_i) = (1/2) * (y_i - b_i) ^ 2.
 %
 %   Test data are generated as follows
@@ -63,14 +63,16 @@ end
 if nargin < 5
   quiet = false;
 end
+if nargin < 6
+  save_mat = false;
+end
 
 % Initialize Variables.
 rng(0, 'twister')
 
 n_half = floor(2 * n / 3);
-n_2ndhalf = n - n_half;
 A = 1 / n * rand(m, n);
-b = A * [ones(n_half, 1); -ones(n_2ndhalf, 1)]  + 0.01 * randn(m, 1);
+b = A * [ones(n_half, 1); -ones(n - n_half, 1)] + 0.01 * randn(m, 1);
 
 % Export Matrices
 if save_mat

@@ -22,7 +22,7 @@ struct AdmmData {
 };
 
 void Solver(AdmmData *admm_data) {
-  const unsigned int kMaxIter = 1000;
+  const unsigned int kMaxIter = 2000;
   const double kRelTol = 1e-2;
   const double kAbsTol = 1e-4;
 
@@ -62,7 +62,7 @@ void Solver(AdmmData *admm_data) {
   gsl_matrix_free(I);
 
   // Signal start of execution.
-  printf("%3s %10s %10s %10s %10s %10s\n",
+  printf("%4s %12s %10s %10s %10s %10s\n",
          "#", "r norm", "eps_pri", "s norm", "eps_dual", "objective");
 
   double sqrtn = sqrt(static_cast<double>(n));
@@ -105,15 +105,15 @@ void Solver(AdmmData *admm_data) {
     gsl_vector_sub(z_prev, z);
     double nrm_r = gsl_blas_dnrm2(z12);
     double nrm_s = admm_data->rho * gsl_blas_dnrm2(z_prev);
-    double obj = FuncEval(admm_data->f, admm_data->rho, y.vector.data) +
-        FuncEval(admm_data->g, admm_data->rho, x.vector.data);
-
 
     // Evaluate stopping criteria.
     bool converged = nrm_r <= eps_pri && nrm_s <= eps_dual;
-    if (k % 10 == 0 || converged)
+    if (k % 10 == 0 || converged) {
+      double obj = FuncEval(admm_data->f, y.vector.data) +
+          FuncEval(admm_data->g, x.vector.data);
       printf("%4d :  %.3e  %.3e  %.3e  %.3e  %.3e\n",
              k, nrm_r, eps_pri, nrm_s, eps_dual, obj);
+    }
 
     if (converged)
       break;
@@ -127,13 +127,14 @@ void Solver(AdmmData *admm_data) {
     admm_data->y[i] = gsl_vector_get(&y12.vector, i);
   for (unsigned int i = 0; i < n; ++i)
     admm_data->x[i] = gsl_vector_get(&x12.vector, i);
-
+  
   // Free up memory.
   gsl_matrix_free(L);
   gsl_matrix_free(AA);
   gsl_vector_free(z);
   gsl_vector_free(zt);
   gsl_vector_free(z12);
+  gsl_vector_free(z_prev);
 }
 
 #endif /* SOLVER_HPP_ */

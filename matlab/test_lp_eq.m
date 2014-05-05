@@ -1,18 +1,18 @@
 function results = test_lp_eq(m, n, rho, quiet, save_mat)
-%%TEST_LP_EQ Test ADMM on an inequality constrained LP.
+%%TEST_LP_EQ Test ADMM on an equality constrained LP.
 %   Compares ADMM to CVX when solving the problem
 %
-%     minimize    c^T * x,
-%     subject to  Ax = b,
+%     minimize    c^T * x
+%     subject to  Ax = b
 %                 x >= 0.
 %
 %   We transform this problem to
 %
-%     minimize    f(y) + g(x),
-%     subject to  y = [A; c^T] * x.
+%     minimize    f(y) + g(x)
+%     subject to  y = [A; c^T] * x,
 %
-%   where g(x_i)        = I(x_u >= 0),
-%         f_{1..m}(y_i) = I(y_i = b_i),
+%   where g(x_i)        = I(x_i >= 0)
+%         f_{1..m}(y_i) = I(y_i = b_i)
 %         f_{m+1}(y_i)  = y_i.
 %
 %   Test data are generated as follows

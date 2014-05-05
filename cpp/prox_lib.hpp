@@ -293,7 +293,7 @@ void ProxEval(const std::vector<FunctionObj<T>> f_obj, T rho, const T* x_in,
  * @param x_out Array to which result will be written.
  */
 template <typename T>
-T FuncEval(const std::vector<FunctionObj<T>> f_obj, T rho, const T* x_in) {
+T FuncEval(const std::vector<FunctionObj<T>> f_obj, const T* x_in) {
   T sum = 0;
   #pragma omp parallel for reduction(+:sum)
   for (unsigned int i = 0; i < f_obj.size(); ++i) {

@@ -2,15 +2,15 @@ function results = test_lp_ineq(m, n, rho, quiet, save_mat)
 %%TEST_LP_INEQ Test ADMM on an inequality constrained LP.
 %   Compares ADMM to CVX when solving the problem
 %
-%     minimize    c^T * x,
+%     minimize    c^T * x
 %     subject to  Ax <= b.
 %
 %   We transform this problem to
 %
-%     minimize    f(y) + g(x),
-%     subject to  y = A * x.
+%     minimize    f(y) + g(x)
+%     subject to  y = A * x,
 %
-%   where g_i(x_i) = c_i * x_i,
+%   where g_i(x_i) = c_i * x_i
 %         f_i(y_i) = I(y_i <= b_i).
 %
 %   Test data are generated as follows
@@ -77,7 +77,7 @@ end
 rng(0, 'twister')
 
 A = [-1 / n *rand(m - n, n); -eye(n)];
-b = A * rand(n, 1)  + 0.2 * rand(m, 1);
+b = A * rand(n, 1) + 0.2 * rand(m, 1);
 c = rand(n, 1);
 
 % Export Matrices
