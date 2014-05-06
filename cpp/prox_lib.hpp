@@ -44,9 +44,10 @@ struct FunctionObj {
         d(static_cast<T>(0)) { }
 
   void check_c() {
-    if (c < static_cast<T>(0))
-      fprintf(stderr, "WARNING c < 0. Function not convex. Using |c|");
-    c = fabs(c);
+    if (c < static_cast<T>(0)) {
+      fprintf(stderr, "WARNING c < 0. Function not convex. Using c = 0");
+      c = static_cast<T>(0);
+    }
   }
 };
 
