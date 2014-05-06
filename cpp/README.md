@@ -20,7 +20,7 @@ The heart of the solver is the proximal operator library (`prox_lib.hpp`), which
 	c * f(a * x - b) + d * x,
 ```
 
-where `a, b` and `d` take on real values, `c` must be non-negative and `f` is one of (currently) 13 enumumerated values (see below). To instantiate a `FunctionObj` you must specify all of these values, however `a` and `c` default to 1 and `b` and `d` default to 0. 
+where `a, b` and `d` take on real values, `c` is a non-negative real and `f` is one of (currently) 13 enumumerated values (see below). To instantiate a `FunctionObj` you must specify all of these values, however `a` and `c` default to 1 and `b` and `d` default to 0. 
 
 The enumerated function types are:
 
