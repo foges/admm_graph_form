@@ -2,6 +2,7 @@
 #define PROX_LIB_HPP_
 
 #include <cmath>
+#include <cstdio>
 #include <limits>
 #include <vector>
 
@@ -27,18 +28,26 @@ template <typename T>
 struct FunctionObj {
   Function f;
   T a, b, c, d;
+
   FunctionObj(Function f, T a, T b, T c, T d)
-      : f(f), a(a), b(b), c(c), d(d) { }
+      : f(f), a(a), b(b), c(c), d(d) { check_c(); }
   FunctionObj(Function f, T a, T b, T c)
-      : f(f), a(a), b(b), c(c), d(static_cast<T>(0)) { }
+      : f(f), a(a), b(b), c(c), d(static_cast<T>(0)) { check_c(); }
   FunctionObj(Function f, T a, T b)
-      : f(f), a(a), b(b), c(static_cast<T>(1)), d(static_cast<T>(0)) { }
+      : f(f), a(a), b(b), c(static_cast<T>(1)),
+        d(static_cast<T>(0)) { }
   FunctionObj(Function f, T a)
       : f(f), a(a), b(static_cast<T>(0)), c(static_cast<T>(1)),
         d(static_cast<T>(0)) { }
   explicit FunctionObj(Function f)
       : f(f), a(static_cast<T>(1)), b(static_cast<T>(0)), c(static_cast<T>(1)),
         d(static_cast<T>(0)) { }
+
+  void check_c() {
+    if (c < static_cast<T>(0))
+      fprintf(stderr, "WARNING c < 0. Function not convex. Using |c|");
+    c = fabs(c);
+  }
 };
 
 
@@ -47,13 +56,13 @@ namespace {
 // Evalution of max(0, x).
 template <typename T>
 inline T MaxPos(T x) {
-  return x >= static_cast<T>(0) ? x : static_cast<T>(0);
+  return fmax(static_cast<T>(0), x);
 }
 
 //  Evalution of max(0, -x).
 template <typename T>
 inline T MaxNeg(T x) {
-  return x <= static_cast<T>(0) ? -x : static_cast<T>(0);
+  return fmax(static_cast<T>(0), -x);
 }
 }  // namespace
 
