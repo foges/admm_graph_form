@@ -5,6 +5,7 @@
 #include <limits>
 #include <vector>
 
+// List of functions supported by the proximal operator library.
 enum Function { kAbs,       // f(x) = |x|
                 kHuber,     // f(x) = huber(x)
                 kIdentity,  // f(x) = x
@@ -20,11 +21,8 @@ enum Function { kAbs,       // f(x) = |x|
                 kZero };    // f(x) = 0
 
 
-/**
- * Object associated with the generic function c * f(a * x - b) + d * x.
- *
- * Parameters a and c default to 1, while b and d default to 0.
- */
+// Object associated with the generic function c * f(a * x - b) + d * x.
+// Parameters a and c default to 1, while b and d default to 0.
 template <typename T>
 struct FunctionObj {
   Function f;
@@ -44,7 +42,7 @@ struct FunctionObj {
 };
 
 
-/* Local Functions */
+// Local Functions.
 namespace {
 // Evalution of max(0, x).
 template <typename T>
@@ -60,17 +58,15 @@ inline T MaxNeg(T x) {
 }  // namespace
 
 
-/* Proximal operator definitions.
- *
- * Each of the following functions corresponds to one of the Function enums.
- * All functions accept one argument x and five parameters (a, b, c, d and rho)
- * and returns the evaluation of
- *
- *   x -> Prox{c * f(a * x - b) + d * x},
- *
- * where Prox{.} is the proximal operator with penalty parameter rho.
- *
- */
+// Proximal operator definitions.
+// 
+// Each of the following functions corresponds to one of the Function enums.
+// All functions accept one argument x and five parameters (a, b, c, d and rho)
+// and returns the evaluation of
+// 
+//   x -> Prox{c * f(a * x - b) + d * x},
+// 
+// where Prox{.} is the proximal operator with penalty parameter rho.
 template <typename T>
 inline T ProxAbs(T x, T a, T b, T c, T d, T rho) {
   T x_ = a * (x - d / rho) - b;
@@ -162,15 +158,13 @@ inline T ProxZero(T x, T a, T b, T c, T d, T rho) {
 }
 
 
-/* Function fefinitions.
- *
- * Each of the following functions corresponds to one of the Function enums.
- * All functions accept one argument x and four parameters (a, b, c, and d)
- * and returns the evaluation of
- *
- *   x -> c * f(a * x - b) + d * x.
- *
- */
+// Function definitions.
+// 
+// Each of the following functions corresponds to one of the Function enums.
+// All functions accept one argument x and four parameters (a, b, c, and d)
+// and returns the evaluation of
+// 
+//   x -> c * f(a * x - b) + d * x.
 template <typename T>
 inline T FuncAbs(T x, T a, T b, T c, T d) {
   return c * fabs(a * x + b) + d * x;
@@ -178,7 +172,8 @@ inline T FuncAbs(T x, T a, T b, T c, T d) {
 
 template <typename T>
 inline T FuncHuber(T x, T a, T b, T c, T d) {
-  return std::numeric_limits<T>::quiet_NaN();
+  T xabs = fabs(a * x - b);
+  return xabs < static_cast<T>(1) ? c * xabs * xabs + d * x : c * xabs + d * x;
 }
 
 template <typename T>
@@ -188,22 +183,22 @@ inline T FuncIdentity(T x, T a, T b, T c, T d) {
 
 template <typename T>
 inline T FuncIndBox01(T x, T a, T b, T c, T d) {
-  return 0;
+  return d * x;
 }
 
 template <typename T>
 inline T FuncIndEq0(T x, T a, T b, T c, T d) {
-  return 0;
+  return d * x;
 }
 
 template <typename T>
 inline T FuncIndGe0(T x, T a, T b, T c, T d) {
-  return 0;
+  return d * x; 
 }
 
 template <typename T>
 inline T FuncIndLe0(T x, T a, T b, T c, T d) {
-  return 0;
+  return d * x;
 }
 
 template <typename T>
@@ -213,7 +208,7 @@ inline T FuncNegLog(T x, T a, T b, T c, T d) {
 
 template <typename T>
 inline T FuncLogistic(T x, T a, T b, T c, T d) {
-  return std::numeric_limits<T>::quiet_NaN();
+  return c * log(static_cast<T>(1) + exp(a * x + b)) + d * x;
 }
 
 template <typename T>
@@ -238,16 +233,14 @@ inline T FuncZero(T x, T a, T b, T c, T d) {
 }
 
 
-/**
- * Evaluates proximal operator f_obj.prox(x_in) -> x_out element-wise.
- *
- * @param f_obj Vector of function objects.
- * @param rho Penalty parameter.
- * @param x_in Array to which proximal operator will be applied.
- * @param x_out Array to which result will be written.
- */
+// Evaluates the proximal operator Prox{f_obj[i]}(x_in[i]) -> x_out[i].
+// 
+// @param f_obj Vector of function objects.
+// @param rho Penalty parameter.
+// @param x_in Array to which proximal operator will be applied.
+// @param x_out Array to which result will be written.
 template <typename T>
-void ProxEval(const std::vector<FunctionObj<T>> f_obj, T rho, const T* x_in,
+void ProxEval(const std::vector<FunctionObj<T>> &f_obj, T rho, const T* x_in,
               T* x_out) {
   #pragma omp parallel for
   for (unsigned int i = 0; i < f_obj.size(); ++i) {
@@ -288,15 +281,14 @@ void ProxEval(const std::vector<FunctionObj<T>> f_obj, T rho, const T* x_in,
 }
 
 
-/**
- * Evaluates function f_obj.func(x_in) -> x_out element-wise.
- *
- * @param f_obj Vector of function objects.
- * @param x_in Array to which function will be applied.
- * @param x_out Array to which result will be written.
- */
+// Returns evalution of Sum_i Func{f_obj[i]}(x_in[i]).
+// 
+// @param f_obj Vector of function objects.
+// @param x_in Array to which function will be applied.
+// @param x_out Array to which result will be written.
+// @returns Evaluation of sum of functions.
 template <typename T>
-T FuncEval(const std::vector<FunctionObj<T>> f_obj, const T* x_in) {
+T FuncEval(const std::vector<FunctionObj<T>> &f_obj, const T* x_in) {
   T sum = 0;
   #pragma omp parallel for reduction(+:sum)
   for (unsigned int i = 0; i < f_obj.size(); ++i) {

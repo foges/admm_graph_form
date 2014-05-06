@@ -45,8 +45,9 @@ void Solver(AdmmData *admm_data) {
   gsl_matrix_free(I);
 
   // Signal start of execution.
-  printf("%4s %12s %10s %10s %10s %10s\n",
-         "#", "r norm", "eps_pri", "s norm", "eps_dual", "objective");
+  if (!admm_data->quiet)
+    printf("%4s %12s %10s %10s %10s %10s\n",
+           "#", "r norm", "eps_pri", "s norm", "eps_dual", "objective");
 
   double sqrtn_atol = sqrt(static_cast<double>(n)) * admm_data->abs_tol;
 
