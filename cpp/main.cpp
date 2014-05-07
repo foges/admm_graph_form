@@ -26,7 +26,7 @@ double test1() {
   for (unsigned int i = 0; i < m * n; ++i)
     A[i] = 1.0 / static_cast<double>(n) * u_dist(generator);
 
-  AdmmData admm_data(A.data(), m, n);
+  AdmmData<double> admm_data(A.data(), m, n);
   admm_data.x = x.data();
   admm_data.y = y.data();
 
@@ -75,7 +75,7 @@ double test2() {
   for (unsigned int i = static_cast<unsigned int>(n * n); i < m * n; ++i)
     A[i] = i % n == 0 ? -1.0 : 0;
 
-  AdmmData admm_data(A.data(), m, n);
+  AdmmData<double> admm_data(A.data(), m, n);
   admm_data.x = x.data();
   admm_data.y = y.data();
 
@@ -125,7 +125,7 @@ double test3() {
   for (unsigned int i = 0; i < (m + 1) * n; ++i)
     A[i] = 1.0 / static_cast<double>(n) * u_dist(generator);
 
-  AdmmData admm_data(A.data(), m + 1, n);
+  AdmmData<double> admm_data(A.data(), m + 1, n);
   admm_data.x = x.data();
   admm_data.y = y.data();
 
@@ -183,7 +183,7 @@ double test4() {
     A[i * (n + 1) + n] = -sign_yi;
   }
 
-  AdmmData admm_data(A.data(), m, n + 1);
+  AdmmData<double> admm_data(A.data(), m, n + 1);
   admm_data.x = x.data();
   admm_data.y = y.data();
 

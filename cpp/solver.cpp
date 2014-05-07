@@ -7,21 +7,25 @@
 #include <vector>
 
 #include "solver.hpp"
+#include "timer.hpp"
 
-void Solver(AdmmData *admm_data) {
+template<>
+void Solver(AdmmData<double> *admm_data) {
   // Extract values from admm_data
   size_t n = admm_data->n;
   size_t m = admm_data->m;
-  gsl_matrix_const_view A = gsl_matrix_const_view_array(admm_data->A, m, n);
-
   bool is_skinny = m >= n;
   size_t min_dim  = std::min(m, n);
+
+  gsl_matrix_const_view A = gsl_matrix_const_view_array(admm_data->A, m, n);
 
   // Allocate data for ADMM variables.
   gsl_vector *z = gsl_vector_calloc(m + n);
   gsl_vector *zt = gsl_vector_calloc(m + n);
   gsl_vector *z12 = gsl_vector_calloc(m + n);
   gsl_vector *z_prev = gsl_vector_calloc(m + n);
+  gsl_matrix *L = gsl_matrix_calloc(min_dim, min_dim);
+  gsl_matrix *AA = gsl_matrix_calloc(min_dim, min_dim);
 
   // Create views for x and y components.
   gsl_vector_view x = gsl_vector_subvector(z, 0, n);
@@ -30,19 +34,14 @@ void Solver(AdmmData *admm_data) {
   gsl_vector_view yt = gsl_vector_subvector(zt, n, m);
   gsl_vector_view x12 = gsl_vector_subvector(z12, 0, n);
   gsl_vector_view y12 = gsl_vector_subvector(z12, n, m);
-
-  gsl_matrix *L = gsl_matrix_calloc(min_dim, min_dim);
-  gsl_matrix *AA = gsl_matrix_calloc(min_dim, min_dim);
-  gsl_matrix *I = gsl_matrix_calloc(min_dim, min_dim);
-
+  
   // Compute cholesky decomposition of (I + A^TA) or (I + AA^T)
   CBLAS_TRANSPOSE_t mult_type = is_skinny ? CblasTrans : CblasNoTrans;
   gsl_blas_dsyrk(CblasLower, mult_type, 1.0, &A.matrix, 0.0, AA);
-  gsl_matrix_set_identity(I);
   gsl_matrix_memcpy(L, AA);
-  gsl_matrix_add(L, I);
+  for (unsigned int i = 0; i < min_dim; ++i)
+    *gsl_matrix_ptr(L, i, i) += 1.0;
   gsl_linalg_cholesky_decomp(L);
-  gsl_matrix_free(I);
 
   // Signal start of execution.
   if (!admm_data->quiet)
