@@ -4,12 +4,11 @@
 
 Tutorial
 --------
-The fist step is to formulate the problem in such a way that `A`, `f` and `g` are clearly defined. Once this is done, you should instantiate an `AdmmData` object and set _all_ fields. These are:
+The fist step is to formulate the problem in such a way that `A`, `f` and `g` are clearly defined. Once this is done, you should instantiate an `AdmmData` object and set _all_ input fields. These are:
 
   + `AdmmData::A`: Pointer to the `A` matrix from the problem description. It is assumed to be in row-major format. 
   + `(AdmmData::m, AdmmData::n)`: Dimensions of `A`.
   + `(AdmmData::x, AdmmData::y)`: Pointers to pre-allocated memory locations, where the solution will be stored.
-  + `AdmmData::rho`: Penalty parameter for the proximal operator. A value of 1.0 is typical.
   + `(AdmmData::f, AdmmData::g)`: Vectors of function objects. The `i`'th element corresponds to the term `f_i`  (respectively `g_j`) in the objective. Refer to the Proximal Operator Library section for a description of function objects.
 
 
@@ -21,7 +20,7 @@ The heart of the solver is the proximal operator library (`prox_lib.hpp`), which
 	c * f(a * x - b) + d * x,
 ```
 
-where `a, b, c` and `d` take on real values and `f` is one of (currently) 13 enumumerated values (see below). To instantiate a `FunctionObj` you must specify all of these values, however `a` and `c` default to 1 and `b` and `d` default to 0. 
+where `a, b` and `d` take on real values, `c` is a non-negative real and `f` is one of (currently) 13 enumumerated values (see below). To instantiate a `FunctionObj` you must specify all of these values, however `a` and `c` default to 1 and `b` and `d` default to 0. 
 
 The enumerated function types are:
 

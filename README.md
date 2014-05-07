@@ -69,5 +69,9 @@ References
 [prox_algs]: http://www.stanford.edu/~boyd/papers/prox_algs.html "Proximal Algorithms -- N. Parikh and S. Boyd"
 
 
+Author
+------
+Chris Fougner (fougner@stanford.edu)
 
+Acknowledgement: Much of this is based on work by Neal Parikh.
 
