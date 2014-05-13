@@ -97,7 +97,7 @@ void matrix_memcpy(matrix<T> *A, const matrix<T> *B) {
 template <typename T>
 void matrix_memcpy(matrix<T> *A, const T *B) {
   cudaError_t err = cudaMemcpy(reinterpret_cast<void*>(A->data),
-      reinterpret_cast<cons void*>(B), A->tda * A->size2 * sizeof(T),
+      reinterpret_cast<const void*>(B), A->tda * A->size2 * sizeof(T),
       cudaMemcpyDefault);
   CudaCheckError(err);
 }
