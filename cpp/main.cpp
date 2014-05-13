@@ -11,8 +11,8 @@
 // See <admm_graph_form>/matlab/test_nonneg_l2.m for detailed description.
 double test1() {
   printf("\nNon-Negative Least Squares.\n");
-  size_t m = 1000;
-  size_t n = 200;
+  size_t m = 100;
+  size_t n = 2;
   std::vector<double> A(m * n);
   std::vector<double> x(n);
   std::vector<double> y(m);
