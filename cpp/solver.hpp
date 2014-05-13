@@ -9,8 +9,7 @@
 template <typename T>
 struct AdmmData {
   // Input.
-  std::vector<FunctionObj<T>> f;
-  std::vector<FunctionObj<T>> g;
+  std::vector<FunctionObj<T> > f, g;
   const T *A;
   size_t m, n;
 
@@ -20,8 +19,7 @@ struct AdmmData {
   // Parameters.
   T rho;
   unsigned int max_iter;
-  T rel_tol;
-  T abs_tol;
+  T rel_tol, abs_tol;
   bool quiet;
 
   // Constructor.

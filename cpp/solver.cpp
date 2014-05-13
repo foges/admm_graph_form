@@ -63,13 +63,13 @@ void Solver(AdmmData<double> *admm_data) {
     if (is_skinny) {
       gsl_vector_memcpy(&x.vector, &xt.vector);
       gsl_blas_dgemv(CblasTrans, 1.0, &A.matrix, &yt.vector, 1.0, &x.vector);
-      gsl_linalg_cholesky_solve(L, &x.vector, &x.vector);
+      gsl_linalg_cholesky_svx(L, &x.vector);
       gsl_blas_dgemv(CblasNoTrans, 1.0, &A.matrix, &x.vector, 0, &y.vector);
       gsl_vector_sub(&yt.vector, &y.vector);
     } else {
       gsl_blas_dgemv(CblasNoTrans, 1.0, &A.matrix, &xt.vector, 0.0, &y.vector);
       gsl_blas_dgemv(CblasNoTrans, 1.0, AA, &yt.vector, 1.0, &y.vector);
-      gsl_linalg_cholesky_solve(L, &y.vector, &y.vector);
+      gsl_linalg_cholesky_svx(L, &y.vector);
       gsl_vector_sub(&yt.vector, &y.vector);
       gsl_vector_memcpy(&x.vector, &xt.vector);
       gsl_blas_dgemv(CblasTrans, 1.0, &A.matrix, &yt.vector, 1.0, &x.vector);
