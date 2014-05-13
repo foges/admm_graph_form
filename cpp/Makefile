@@ -1,29 +1,39 @@
+# User Vars
 GSLROOT=/usr/local
 
+# C++ Flags
 CXX=g++
 CXXFLAGS=-g -Wall -Wconversion -std=c++11 -I$(GSLROOT)/include -fopenmp
-LDFLAGS=-framework Accelerate -lgsl -lgslcblas -lm
+LDFLAGS=-lgsl -lgslcblas -lm
 
-
-# main: main.cpp solver.o
-# 	$(CXX) $(CXXFLAGS) $(LDFLAGS) $^ -o $@
-
-#solver.o: solver.cpp solver.hpp prox_lib.hpp
-#	$(CXX) $(CXXFLAGS) $< -c -o $@
-
-
+# CUDA Flags
 CUXX=nvcc
 CUFLAGS=-arch=sm_20 -lineinfo -G
-#CULDFLAGS=-L/usr/local/cuda/lib -lcudart -lcublas -L/usr/local/lib
-CULDFLAGS=-L/cm/shared/apps/cuda55/toolkit/current/lib64 -lcudart -lcublas
+CULDFLAGS=-lcudart -lcublas
 
-main: main.cpp solver.o solver_link.o
-	$(CXX) $(CXXFLAGS) $(CULDFLAGS) $^ -o $@
+UNAME = $(shell uname -s)
+ifeq ($(UNAME), Darwin)
+LDFLAGS_=$(LDFLAGS) -framework Accelerate
+CULDFLAGS_=-L/usr/local/cuda/lib -L/usr/local/lib $(CULDFLAGS)
+else
+CULDFLAGS_=-L/cm/shared/apps/cuda55/toolkit/current/lib64 $(CULDFLAGS)
+endif
 
-solver_link.o: solver.o
+# CPU
+cpu: main.cpp solver.o
+	$(CXX) $(CXXFLAGS) $(LDFLAGS_) $^ -o main
+
+solver.o: solver.cpp solver.hpp prox_lib.hpp
+	$(CXX) $(CXXFLAGS) $< -c -o $@
+
+# GPU
+gpu: main.cpp solver_cu.o solver_cu_link.o
+	$(CXX) $(CXXFLAGS) $(CULDFLAGS_) $^ -o main
+
+solver_cu_link.o: solver_cu.o
 	$(CUXX) $(CUFLAGS) $< -dlink -o $@
 
-solver.o: solver.cu solver.hpp prox_lib.hpp cml.cuh
+solver_cu.o: solver.cu solver.hpp prox_lib.hpp cml.cuh
 	$(CUXX) $(CUFLAGS) $< -dc -o $@
 
 clean:
