@@ -385,9 +385,10 @@ struct FuncEvalF : thrust::binary_function<FunctionObj<T>, T, T> {
 
 template <typename T>
 T FuncEval(const thrust::device_vector<FunctionObj<T> > &f_obj, const T *x_in) {
-  return thrust::inner_product(f_obj.cbegin(), f_obj.cend(), x_in,
-                               static_cast<T>(0), FuncEvalF<T>(),
-                               thrust::plus<T>());
+  return thrust::inner_product(f_obj.cbegin(), f_obj.cend(),
+                               thrust::device_pointer_cast(x_in),
+                               static_cast<T>(0), thrust::plus<T>(),
+                               FuncEvalF<T>());
 }
 #endif /* __CUDACC__ */
 

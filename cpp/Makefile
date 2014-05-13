@@ -1,7 +1,7 @@
 GSLROOT=/usr/local
 
 CXX=g++
-CXXFLAGS=-g -O3 -Wall -Wconversion -std=c++11 -I$(GSLROOT)/include -fopenmp
+CXXFLAGS=-g -Wall -Wconversion -std=c++11 -I$(GSLROOT)/include -fopenmp
 LDFLAGS=-framework Accelerate -lgsl -lgslcblas -lm
 
 
@@ -14,7 +14,8 @@ LDFLAGS=-framework Accelerate -lgsl -lgslcblas -lm
 
 CUXX=nvcc
 CUFLAGS=-arch=sm_20 -lineinfo -G
-CULDFLAGS=-L/usr/local/cuda/lib -lcudart -lcublas -L/usr/local/lib
+#CULDFLAGS=-L/usr/local/cuda/lib -lcudart -lcublas -L/usr/local/lib
+CULDFLAGS=-L/cm/shared/apps/cuda55/toolkit/current/lib64 -lcudart -lcublas
 
 main: main.cpp solver.o solver_link.o
 	$(CXX) $(CXXFLAGS) $(CULDFLAGS) $^ -o $@

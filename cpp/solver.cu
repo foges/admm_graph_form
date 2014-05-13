@@ -41,10 +41,10 @@ void Solver(AdmmData<T> *admm_data) {
   delete [] Acm;
 
   // Copy f and g to device
-  thrust::device_vector<FunctionObj<T> > f(admm_data->f.begin(),
-                                           admm_data->f.end());
-  thrust::device_vector<FunctionObj<T> > g(admm_data->g.begin(),
-                                           admm_data->g.end());
+  // thrust::device_vector<FunctionObj<T> > f(admm_data->f.begin(),
+  //                                          admm_data->f.end());
+  // thrust::device_vector<FunctionObj<T> > g(admm_data->g.begin(),
+  //                                          admm_data->g.end());
   // Create views for x and y components.
   cml::vector<T> x = cml::vector_subvector(&z, 0, n);
   cml::vector<T> y = cml::vector_subvector(&z, n, m);
@@ -56,7 +56,7 @@ void Solver(AdmmData<T> *admm_data) {
   // Compute cholesky decomposition of (I + A^TA) or (I + AA^T)
   cublasOperation_t mult_type = is_skinny ? CUBLAS_OP_T : CUBLAS_OP_N;
   cml::blas_syrk(cb_handle, CUBLAS_FILL_MODE_LOWER, mult_type, kOne, &A, -kZero,
-                &AA);
+                 &AA);
   cml::matrix_add_constant_diag(&L, kOne);
   cml::linalg_cholesky_decomp(cb_handle, &L);
 
@@ -71,12 +71,12 @@ void Solver(AdmmData<T> *admm_data) {
     // Evaluate Proximal Operators
     cml::blas_axpy(cb_handle, -kOne, &x, &xt);
     cml::blas_axpy(cb_handle, -kOne, &y, &yt);
-    ProxEval(g, admm_data->rho, x.data, x12.data);
-    ProxEval(f, admm_data->rho, y.data, y12.data);
+    // ProxEval(g, admm_data->rho, x.data, x12.data);
+    // ProxEval(f, admm_data->rho, y.data, y12.data);
     printf("hi %d\n", ++count);
     // Project and Update Dual Variables
-    printf("%d", cml::blas_axpy(cb_handle, kOne, &xt, &x12));
-    printf("%d", cml::blas_axpy(cb_handle, kOne, &yt, &y12));
+    printf("..%d", cml::blas_axpy(cb_handle, kOne, &xt, &x12));
+    printf("..%d", cml::blas_axpy(cb_handle, kOne, &yt, &y12));
     printf("hi %d\n", ++count);
     // Project and Update Dual Variables
     if (is_skinny) {
@@ -98,7 +98,7 @@ void Solver(AdmmData<T> *admm_data) {
     // Project and Update Dual Variables
     }
     cml::blas_axpy(cb_handle, -kOne, &xt, &x);
-    printf("hi %d\n", ++count);
+    printf("hi. %d\n", ++count);
     // Project and Update Dual Variables
 
     // Compute primal and dual tolerances.
@@ -119,7 +119,7 @@ void Solver(AdmmData<T> *admm_data) {
     // Evaluate stopping criteria.
     bool converged = nrm_r <= eps_pri && nrm_s <= eps_dual;
     if (!admm_data->quiet && (k % 10 == 0 || converged)) {
-      T obj = FuncEval(admm_data->f, y.data) + FuncEval(admm_data->g, x.data);
+      T obj = 0; // FuncEval(f, y.data) + FuncEval(g, x.data);
       printf("%4d :  %.3e  %.3e  %.3e  %.3e  %.3e\n",
              k, nrm_r, eps_pri, nrm_s, eps_dual, obj);
     }
