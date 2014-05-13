@@ -68,7 +68,7 @@ void Solver(AdmmData<double> *admm_data) {
       gsl_vector_sub(&yt.vector, &y.vector);
     } else {
       gsl_blas_dgemv(CblasNoTrans, 1.0, &A.matrix, &xt.vector, 0.0, &y.vector);
-      gsl_blas_dgemv(CblasNoTrans, 1.0, AA, &yt.vector, 1.0, &y.vector);
+      gsl_blas_dsymv(CblasLower, 1.0, AA, &yt.vector, 1.0, &y.vector);
       gsl_linalg_cholesky_svx(L, &y.vector);
       gsl_vector_sub(&yt.vector, &y.vector);
       gsl_vector_memcpy(&x.vector, &xt.vector);

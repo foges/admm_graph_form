@@ -80,17 +80,18 @@ matrix<T> matrix_submatrix(matrix<T> *A, size_t i, size_t j, size_t n1,
   matrix<T> submat;
   submat.size1 = n1;
   submat.size2 = n2;
-  submat.data = A->data + j *A->tda + i;
+  submat.data = A->data + j * A->tda + i;
   submat.tda = A->tda;
   return submat;
 }
 
 // Matrix memcpy.
+// TODO: Take tda into account properly
 template <typename T>
 void matrix_memcpy(matrix<T> *A, const matrix<T> *B) {
   cudaError_t err = cudaMemcpy(reinterpret_cast<void*>(A->data),
-             reinterpret_cast<const void*>(B->data),
-             A->tda * A->size2 * sizeof(T), cudaMemcpyDefault);
+      reinterpret_cast<const void*>(B->data), A->tda * A->size2 * sizeof(T),
+      cudaMemcpyDefault);
   CudaCheckError(err);
 }
 
@@ -149,7 +150,7 @@ vector<T> vector_subvector(vector<T> *vec, size_t offset,
     size_t n) {
   vector<T> subvec;
   subvec.size = n;
-  subvec.data = vec->data + offset;
+  subvec.data = vec->data + offset * vec->stride;
   subvec.stride = vec->stride;
   return subvec;
 }
@@ -311,14 +312,14 @@ cublasStatus_t blas_axpy(cublasHandle_t handle, float alpha,
 // Gemv.
 template <typename T>
 cublasStatus_t blas_gemv(cublasHandle_t handle, cublasOperation_t trans,
-                             T alpha, matrix<T> *A, const vector<T> *x,
-                             T beta, vector<T> *y);
+                         T alpha, matrix<T> *A, const vector<T> *x, T beta,
+                         vector<T> *y);
 
 template <>
 cublasStatus_t blas_gemv(cublasHandle_t handle, cublasOperation_t trans,
-                             double alpha, matrix<double> *A,
-                             const vector<double> *x, double beta,
-                             vector<double> *y) {
+                         double alpha, matrix<double> *A,
+                         const vector<double> *x, double beta,
+                         vector<double> *y) {
   cublasStatus_t err = cublasDgemv(handle, trans, static_cast<int>(A->size1),
       static_cast<int>(A->size2), &alpha, A->data, static_cast<int>(A->tda),
       x->data, static_cast<int>(x->stride), &beta, y->data,
@@ -329,13 +330,41 @@ cublasStatus_t blas_gemv(cublasHandle_t handle, cublasOperation_t trans,
 
 template <>
 cublasStatus_t blas_gemv(cublasHandle_t handle, cublasOperation_t trans,
-                             float alpha, matrix<float> *A,
-                             const vector<float> *x, float beta,
-                             vector<float> *y) {
+                         float alpha, matrix<float> *A, const vector<float> *x,
+                         float beta, vector<float> *y) {
   cublasStatus_t err = cublasSgemv(handle, trans, static_cast<int>(A->size1),
       static_cast<int>(A->size2), &alpha, A->data, static_cast<int>(A->tda),
       x->data, static_cast<int>(x->stride), &beta, y->data,
       static_cast<int>(y->stride));
+  CublasCheckError(err);
+  return err;
+}
+
+// Symv.
+template <typename T>
+cublasStatus_t blas_symv(cublasHandle_t handle, cublasFillMode_t uplo,
+                        T alpha, matrix<T> *A, const vector<T> *x, T beta, 
+                        vector<T> *y);
+
+template <>
+cublasStatus_t blas_symv(cublasHandle_t handle, cublasFillMode_t uplo,
+                         double alpha, matrix<double> *A,
+                         const vector<double> *x, double beta,
+                         vector<double> *y) {
+  cublasStatus_t err = cublasDsymv(handle, uplo, static_cast<int>(A->size1),
+      &alpha, A->data, static_cast<int>(A->tda), x->data,
+      static_cast<int>(x->stride), &beta, y->data, static_cast<int>(y->stride));
+  CublasCheckError(err);
+  return err;
+}
+
+template <>
+cublasStatus_t blas_symv(cublasHandle_t handle, cublasFillMode_t uplo,
+                         float alpha, matrix<float> *A, const vector<float> *x,
+                         float beta, vector<float> *y) {
+  cublasStatus_t err = cublasSsymv(handle, uplo, static_cast<int>(A->size1),
+      &alpha, A->data, static_cast<int>(A->tda), x->data,
+      static_cast<int>(x->stride), &beta, y->data, static_cast<int>(y->stride));
   CublasCheckError(err);
   return err;
 }

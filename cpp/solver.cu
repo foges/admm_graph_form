@@ -84,7 +84,8 @@ void Solver(AdmmData<T> *admm_data) {
       cml::blas_axpy(cb_handle, -kOne, &y, &yt);
     } else {
       cml::blas_gemv(cb_handle, CUBLAS_OP_N, kOne, &A, &xt, kZero, &y);
-      cml::blas_gemv(cb_handle, CUBLAS_OP_N, kOne, &AA, &yt, kOne, &y);
+      cml::blas_symv(cb_handle, CUBLAS_FILL_MODE_LOWER, kOne, &AA, &yt, kOne,
+                     &y);
       cml::linalg_cholesky_svx(cb_handle, &L, &y);
       cml::blas_axpy(cb_handle, -kOne, &y, &yt);
       cml::vector_memcpy(&x, &xt);
