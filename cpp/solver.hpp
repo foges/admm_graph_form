@@ -24,7 +24,7 @@ struct AdmmData {
 
   // Constructor.
   AdmmData(const T *A, size_t m, size_t n)
-      : A(A), m(m), n(n), rho(static_cast<T>(1.0)), max_iter(1000),
+      : A(A), m(m), n(n), rho(static_cast<T>(1)), max_iter(1000),
         rel_tol(static_cast<T>(1e-2)), abs_tol(static_cast<T>(1e-4)),
         quiet(false) { }
 };

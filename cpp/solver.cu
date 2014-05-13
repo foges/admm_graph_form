@@ -54,8 +54,9 @@ void Solver(AdmmData<T> *admm_data) {
 
   // Compute cholesky decomposition of (I + A^TA) or (I + AA^T)
   cublasOperation_t mult_type = is_skinny ? CUBLAS_OP_T : CUBLAS_OP_N;
-  cml::blas_syrk(cb_handle, CUBLAS_FILL_MODE_LOWER, mult_type, kOne, &A, -kZero,
+  cml::blas_syrk(cb_handle, CUBLAS_FILL_MODE_LOWER, mult_type, kOne, &A, kZero,
                  &AA);
+  cml::matrix_memcpy(&L, &AA);
   cml::matrix_add_constant_diag(&L, kOne);
   cml::linalg_cholesky_decomp(cb_handle, &L);
 
@@ -68,26 +69,26 @@ void Solver(AdmmData<T> *admm_data) {
 
   for (unsigned int k = 0; k < admm_data->max_iter; ++k) {
     // Evaluate Proximal Operators
-    cml::blas_axpy(cb_handle, -kOne, &x, &xt);
-    cml::blas_axpy(cb_handle, -kOne, &y, &yt);
+    cml::blas_axpy(cb_handle, -kOne, &xt, &x);
+    cml::blas_axpy(cb_handle, -kOne, &yt, &y);
     ProxEval(g, admm_data->rho, x.data, x12.data);
     ProxEval(f, admm_data->rho, y.data, y12.data);
     // Project and Update Dual Variables
-    cml::blas_axpy(cb_handle, kOne, &xt, &x12);
-    cml::blas_axpy(cb_handle, kOne, &yt, &y12);
+    cml::blas_axpy(cb_handle, kOne, &x12, &xt);
+    cml::blas_axpy(cb_handle, kOne, &y12, &yt);
     if (is_skinny) {
       cml::vector_memcpy(&x, &xt);
       cml::blas_gemv(cb_handle, CUBLAS_OP_T, kOne, &A, &yt, kOne, &x);
       cml::linalg_cholesky_svx(cb_handle, &L, &x);
-      cml::blas_gemv(cb_handle, CUBLAS_OP_T, kOne, &A, &x, -kZero, &y);
-      cml::blas_axpy(cb_handle, -kOne, &yt, &y);
+      cml::blas_gemv(cb_handle, CUBLAS_OP_N, kOne, &A, &x, kZero, &y);
+      cml::blas_axpy(cb_handle, -kOne, &y, &yt);
     } else {
-      cml::blas_gemv(cb_handle, CUBLAS_OP_N, kOne, &A, &xt, -kZero, &y);
+      cml::blas_gemv(cb_handle, CUBLAS_OP_N, kOne, &A, &xt, kZero, &y);
       cml::blas_gemv(cb_handle, CUBLAS_OP_N, kOne, &AA, &yt, kOne, &y);
       cml::linalg_cholesky_svx(cb_handle, &L, &y);
-      cml::blas_axpy(cb_handle, -kOne, &yt, &y);
+      cml::blas_axpy(cb_handle, -kOne, &y, &yt);
       cml::vector_memcpy(&x, &xt);
-      cml::blas_gemv(cb_handle, CUBLAS_OP_T, -kZero, &A, &yt, kOne, &x);
+      cml::blas_gemv(cb_handle, CUBLAS_OP_T, kOne, &A, &yt, kOne, &x);
     }
     cml::blas_axpy(cb_handle, -kOne, &xt, &x);
 
@@ -99,8 +100,8 @@ void Solver(AdmmData<T> *admm_data) {
     T eps_dual = sqrtn_atol + admm_data->rel_tol * admm_data->rho * nrm_zt;
 
     // Compute ||r^k||_2 and ||s^k||_2.
-    cml::blas_axpy(cb_handle, -kOne, &z12, &z);
-    cml::blas_axpy(cb_handle, -kOne, &z_prev, &z);
+    cml::blas_axpy(cb_handle, -kOne, &z, &z12);
+    cml::blas_axpy(cb_handle, -kOne, &z, &z_prev);
     T nrm_r = cml::blas_nrm2(cb_handle, &z12);
     T nrm_s = admm_data->rho * cml::blas_nrm2(cb_handle, &z_prev);
 
@@ -125,6 +126,7 @@ void Solver(AdmmData<T> *admm_data) {
   // Free up memory.
   cml::matrix_free(&L);
   cml::matrix_free(&AA);
+  cml::matrix_free(&A);
   cml::vector_free(&z);
   cml::vector_free(&zt);
   cml::vector_free(&z12);

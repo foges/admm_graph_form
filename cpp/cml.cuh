@@ -97,7 +97,7 @@ void matrix_memcpy(matrix<T> *A, const matrix<T> *B) {
 template <typename T>
 void matrix_memcpy(matrix<T> *A, const T *B) {
   cudaError_t err = cudaMemcpy(reinterpret_cast<void*>(A->data),
-      reinterpret_cast<const void*>(B), A->tda * A->size2 * sizeof(T),
+      reinterpret_cast<cons void*>(B), A->tda * A->size2 * sizeof(T),
       cudaMemcpyDefault);
   CudaCheckError(err);
 }
@@ -284,23 +284,25 @@ cublasStatus_t blas_geam(cublasHandle_t handle, cublasOperation_t transa,
 
 // Axpy.
 template <typename T>
-cublasStatus_t blas_axpy(cublasHandle_t handle, T alpha, vector<T> *x,
-                             vector<T> *y);
+cublasStatus_t blas_axpy(cublasHandle_t handle, T alpha, const vector<T> *x,
+                         vector<T> *y);
 
 template <>
 cublasStatus_t blas_axpy(cublasHandle_t handle, double alpha,
-                             vector<double> *x, vector<double> *y) {
+                         const vector<double> *x, vector<double> *y) {
   cublasStatus_t err = cublasDaxpy(handle, static_cast<int>(x->size), &alpha,
-      x->data, static_cast<int>(x->stride), y->data, static_cast<int>(y->stride));
+      x->data, static_cast<int>(x->stride), y->data,
+      static_cast<int>(y->stride));
   CublasCheckError(err);
   return err;
 }
 
 template <>
 cublasStatus_t blas_axpy(cublasHandle_t handle, float alpha,
-                             vector<float> *x, vector<float> *y) {
+                         const vector<float> *x, vector<float> *y) {
   cublasStatus_t err = cublasSaxpy(handle, static_cast<int>(x->size), &alpha,
-      x->data, static_cast<int>(x->stride), y->data, static_cast<int>(y->stride));
+      x->data, static_cast<int>(x->stride), y->data,
+      static_cast<int>(y->stride));
   CublasCheckError(err);
   return err;
 }
