@@ -90,7 +90,7 @@ void Solver(AdmmData<T> *admm_data) {
       cml::vector_memcpy(&x, &xt);
       cml::blas_gemv(cb_handle, CUBLAS_OP_T, kOne, &A, &yt, kOne, &x);
     }
-    cml::blas_axpy(cb_handle, -kOne, &xt, &x);
+    cml::blas_axpy(cb_handle, -kOne, &x, &xt);
 
     // Compute primal and dual tolerances.
     T nrm_z = cml::blas_nrm2(cb_handle, &z);

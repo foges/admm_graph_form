@@ -155,6 +155,7 @@ vector<T> vector_subvector(vector<T> *vec, size_t offset,
 }
 
 // Vector memcpy.
+// TODO: Take stride into account.
 template <typename T>
 void vector_memcpy(vector<T> *x, const vector<T> *y) {
   cudaError_t err = cudaMemcpy(reinterpret_cast<void*>(x->data),

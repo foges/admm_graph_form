@@ -15,7 +15,7 @@ void Solver(AdmmData<double> *admm_data) {
   size_t n = admm_data->n;
   size_t m = admm_data->m;
   bool is_skinny = m >= n;
-  size_t min_dim  = std::min(m, n);
+  size_t min_dim = std::min(m, n);
 
   gsl_matrix_const_view A = gsl_matrix_const_view_array(admm_data->A, m, n);
 
@@ -64,7 +64,7 @@ void Solver(AdmmData<double> *admm_data) {
       gsl_vector_memcpy(&x.vector, &xt.vector);
       gsl_blas_dgemv(CblasTrans, 1.0, &A.matrix, &yt.vector, 1.0, &x.vector);
       gsl_linalg_cholesky_svx(L, &x.vector);
-      gsl_blas_dgemv(CblasNoTrans, 1.0, &A.matrix, &x.vector, 0, &y.vector);
+      gsl_blas_dgemv(CblasNoTrans, 1.0, &A.matrix, &x.vector, 0.0, &y.vector);
       gsl_vector_sub(&yt.vector, &y.vector);
     } else {
       gsl_blas_dgemv(CblasNoTrans, 1.0, &A.matrix, &xt.vector, 0.0, &y.vector);
