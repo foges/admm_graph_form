@@ -33,7 +33,6 @@ void Solver(AdmmData<T> *admm_data) {
   cml::matrix<T> AA = cml::matrix_alloc<T>(min_dim, min_dim);
   cml::matrix<T> A = cml::matrix_alloc<T>(m, n);
 
-  int count = 0;
   // Copy A to device (assume input row-major).
   T *Acm = new T[m * n];
   RowToColMajor(admm_data->A, m, n, Acm);
@@ -41,10 +40,10 @@ void Solver(AdmmData<T> *admm_data) {
   delete [] Acm;
 
   // Copy f and g to device
-  // thrust::device_vector<FunctionObj<T> > f(admm_data->f.begin(),
-  //                                          admm_data->f.end());
-  // thrust::device_vector<FunctionObj<T> > g(admm_data->g.begin(),
-  //                                          admm_data->g.end());
+  thrust::device_vector<FunctionObj<T> > f(admm_data->f.begin(),
+                                           admm_data->f.end());
+  thrust::device_vector<FunctionObj<T> > g(admm_data->g.begin(),
+                                           admm_data->g.end());
   // Create views for x and y components.
   cml::vector<T> x = cml::vector_subvector(&z, 0, n);
   cml::vector<T> y = cml::vector_subvector(&z, n, m);
@@ -71,22 +70,17 @@ void Solver(AdmmData<T> *admm_data) {
     // Evaluate Proximal Operators
     cml::blas_axpy(cb_handle, -kOne, &x, &xt);
     cml::blas_axpy(cb_handle, -kOne, &y, &yt);
-    // ProxEval(g, admm_data->rho, x.data, x12.data);
-    // ProxEval(f, admm_data->rho, y.data, y12.data);
-    printf("hi %d\n", ++count);
+    ProxEval(g, admm_data->rho, x.data, x12.data);
+    ProxEval(f, admm_data->rho, y.data, y12.data);
     // Project and Update Dual Variables
-    printf("..%d", cml::blas_axpy(cb_handle, kOne, &xt, &x12));
-    printf("..%d", cml::blas_axpy(cb_handle, kOne, &yt, &y12));
-    printf("hi %d\n", ++count);
-    // Project and Update Dual Variables
+    cml::blas_axpy(cb_handle, kOne, &xt, &x12);
+    cml::blas_axpy(cb_handle, kOne, &yt, &y12);
     if (is_skinny) {
       cml::vector_memcpy(&x, &xt);
       cml::blas_gemv(cb_handle, CUBLAS_OP_T, kOne, &A, &yt, kOne, &x);
       cml::linalg_cholesky_svx(cb_handle, &L, &x);
       cml::blas_gemv(cb_handle, CUBLAS_OP_T, kOne, &A, &x, -kZero, &y);
       cml::blas_axpy(cb_handle, -kOne, &yt, &y);
-    printf("hi %d\n", ++count);
-    // Project and Update Dual Variables
     } else {
       cml::blas_gemv(cb_handle, CUBLAS_OP_N, kOne, &A, &xt, -kZero, &y);
       cml::blas_gemv(cb_handle, CUBLAS_OP_N, kOne, &AA, &yt, kOne, &y);
@@ -94,12 +88,8 @@ void Solver(AdmmData<T> *admm_data) {
       cml::blas_axpy(cb_handle, -kOne, &yt, &y);
       cml::vector_memcpy(&x, &xt);
       cml::blas_gemv(cb_handle, CUBLAS_OP_T, -kZero, &A, &yt, kOne, &x);
-    printf("hi %d\n", ++count);
-    // Project and Update Dual Variables
     }
     cml::blas_axpy(cb_handle, -kOne, &xt, &x);
-    printf("hi. %d\n", ++count);
-    // Project and Update Dual Variables
 
     // Compute primal and dual tolerances.
     T nrm_z = cml::blas_nrm2(cb_handle, &z);
@@ -114,12 +104,10 @@ void Solver(AdmmData<T> *admm_data) {
     T nrm_r = cml::blas_nrm2(cb_handle, &z12);
     T nrm_s = admm_data->rho * cml::blas_nrm2(cb_handle, &z_prev);
 
-    printf("hi %d\n", ++count);
-    // Project and Update Dual Variables
     // Evaluate stopping criteria.
     bool converged = nrm_r <= eps_pri && nrm_s <= eps_dual;
     if (!admm_data->quiet && (k % 10 == 0 || converged)) {
-      T obj = 0; // FuncEval(f, y.data) + FuncEval(g, x.data);
+      T obj = FuncEval(f, y.data) + FuncEval(g, x.data);
       printf("%4d :  %.3e  %.3e  %.3e  %.3e  %.3e\n",
              k, nrm_r, eps_pri, nrm_s, eps_dual, obj);
     }
@@ -127,8 +115,6 @@ void Solver(AdmmData<T> *admm_data) {
     if (converged)
       break;
 
-    printf("hi %d\n", ++count);
-    // Project and Update Dual Variables
     // Make copy of z.
     cml::vector_memcpy(&z_prev, &z);
   }
