@@ -9,6 +9,21 @@
 #include "solver.hpp"
 #include "timer.hpp"
 
+void print_matrix(const gsl_matrix *A) {
+  for (unsigned int i = 0; i < A->size1; ++i) {
+    for (unsigned int j = 0; j < A->size2; ++j)
+      printf("%e ", A->data[i * A->tda + j]);
+    printf("\n");
+  }
+  printf("\n");
+}
+
+void print_vector(const gsl_vector *x) {
+  for (unsigned int i = 0; i < x->size; ++i)
+    printf("%e ", x->data[i * x->stride]);
+  printf("\n");
+}
+
 template<>
 void Solver(AdmmData<double> *admm_data) {
   // Extract values from admm_data
@@ -43,6 +58,9 @@ void Solver(AdmmData<double> *admm_data) {
     *gsl_matrix_ptr(L, i, i) += 1.0;
   gsl_linalg_cholesky_decomp(L);
 
+  print_matrix(AA);
+  print_matrix(L);
+
   // Signal start of execution.
   if (!admm_data->quiet)
     printf("%4s %12s %10s %10s %10s %10s\n",
@@ -57,15 +75,26 @@ void Solver(AdmmData<double> *admm_data) {
     ProxEval(admm_data->g, admm_data->rho, x.vector.data, x12.vector.data);
     ProxEval(admm_data->f, admm_data->rho, y.vector.data, y12.vector.data);
 
+    print_vector(&x12.vector);
+    print_vector(&y12.vector);
+    exit(1);
+
     // Project and Update Dual Variables
     gsl_vector_add(&xt.vector, &x12.vector);
+    print_vector(&xt.vector); //
     gsl_vector_add(&yt.vector, &y12.vector);
+    print_vector(&yt.vector); //
     if (is_skinny) {
       gsl_vector_memcpy(&x.vector, &xt.vector);
+      print_vector(x); //
       gsl_blas_dgemv(CblasTrans, 1.0, &A.matrix, &yt.vector, 1.0, &x.vector);
+      print_vector(&x.vector); //
       gsl_linalg_cholesky_svx(L, &x.vector);
+      print_vector(&x.vector); //
       gsl_blas_dgemv(CblasNoTrans, 1.0, &A.matrix, &x.vector, 0.0, &y.vector);
+      print_vector(&y.vector); //
       gsl_vector_sub(&yt.vector, &y.vector);
+      print_vector(&yt.vector); //
     } else {
       gsl_blas_dgemv(CblasNoTrans, 1.0, &A.matrix, &xt.vector, 0.0, &y.vector);
       gsl_blas_dsymv(CblasLower, 1.0, AA, &yt.vector, 1.0, &y.vector);

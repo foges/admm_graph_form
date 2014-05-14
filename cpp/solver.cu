@@ -87,13 +87,20 @@ void Solver(AdmmData<T> *admm_data) {
 
     // Project and Update Dual Variables
     cml::blas_axpy(cb_handle, kOne, &x12, &xt);
+    cml::print_vector(xt);
     cml::blas_axpy(cb_handle, kOne, &y12, &yt);
+    cml::print_vector(yt);
     if (is_skinny) {
       cml::vector_memcpy(&x, &xt);
+      cml::print_vector(x); //
       cml::blas_gemv(cb_handle, CUBLAS_OP_T, kOne, &A, &yt, kOne, &x);
+      cml::print_vector(x); //
       cml::linalg_cholesky_svx(cb_handle, &L, &x);
+      cml::print_vector(x); //
       cml::blas_gemv(cb_handle, CUBLAS_OP_N, kOne, &A, &x, kZero, &y);
+      cml::print_vector(y); //
       cml::blas_axpy(cb_handle, -kOne, &y, &yt);
+      cml::print_vector(yt); //
     } else {
       cml::blas_gemv(cb_handle, CUBLAS_OP_N, kOne, &A, &xt, kZero, &y);
       cml::blas_symv(cb_handle, CUBLAS_FILL_MODE_LOWER, kOne, &AA, &yt, kOne,
@@ -104,6 +111,7 @@ void Solver(AdmmData<T> *admm_data) {
       cml::blas_gemv(cb_handle, CUBLAS_OP_T, kOne, &A, &yt, kOne, &x);
     }
     cml::blas_axpy(cb_handle, -kOne, &x, &xt);
+    cml::print_vector(xt); //
 
     // Compute primal and dual tolerances.
     T nrm_z = cml::blas_nrm2(cb_handle, &z);

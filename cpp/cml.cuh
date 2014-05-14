@@ -121,6 +121,7 @@ void print_matrix(const matrix<T> &A) {
     printf("\n");
   }
   printf("\n");
+  delete [] A_;
 }
 
 
@@ -158,8 +159,7 @@ void vector_free(vector<T> *x) {
 
 // Subvector.
 template <typename T>
-vector<T> vector_subvector(vector<T> *vec, size_t offset,
-    size_t n) {
+vector<T> vector_subvector(vector<T> *vec, size_t offset, size_t n) {
   vector<T> subvec;
   subvec.size = n;
   subvec.data = vec->data + offset * vec->stride;
@@ -199,6 +199,7 @@ void print_vector(const vector<T> &x) {
   for (unsigned int i = 0; i < x.size; ++i)
     printf("%e ", x_[i * x.stride]);
   printf("\n");
+  delete [] x_;
 }
 
 
