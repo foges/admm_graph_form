@@ -8,7 +8,7 @@ LDFLAGS=-lgsl -lgslcblas -lm
 
 # CUDA Flags
 CUXX=nvcc
-CUFLAGS=-arch=sm_20 -lineinfo -G
+CUFLAGS=-arch=sm_20 -lineinfo
 CULDFLAGS=-lcudart -lcublas
 
 UNAME = $(shell uname -s)
