@@ -74,6 +74,10 @@ void Solver(AdmmData<T> *admm_data) {
     // Evaluate Proximal Operators
     cml::blas_axpy(cb_handle, -kOne, &xt, &x);
     cml::blas_axpy(cb_handle, -kOne, &yt, &y);
+
+    cml::print_vector(x);
+    cml::print_vector(y);
+
     ProxEval(g, admm_data->rho, x.data, x12.data);
     ProxEval(f, admm_data->rho, y.data, y12.data);
     
