@@ -3,7 +3,7 @@ GSLROOT=/usr/local
 
 # C++ Flags
 CXX=g++
-CXXFLAGS=-g -Wall -Wconversion -std=c++11 -I$(GSLROOT)/include -fopenmp
+CXXFLAGS=-g -O3 -Wall -Wconversion -std=c++11 -I$(GSLROOT)/include -fopenmp
 LDFLAGS=-lgsl -lgslcblas -lm
 
 # CUDA Flags

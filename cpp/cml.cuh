@@ -392,25 +392,36 @@ cublasStatus_t blas_symv(cublasHandle_t handle, cublasFillMode_t uplo,
 
 // Nrm2.
 template <typename T>
-T blas_nrm2(cublasHandle_t handle, vector<T> *x);
+struct Square : thrust::unary_function<T, T> {
+  __device__ T operator()(const T &x) {
+    return x * x;
+  }
+};
 
-template <>
-double blas_nrm2(cublasHandle_t handle, vector<double> *x) {
-  double result;
-  cublasStatus_t err = cublasDnrm2(handle, static_cast<int>(x->size), x->data,
-      static_cast<int>(x->stride), &result);
-  CublasCheckError(err);
-  return result;
+template <typename T>
+T blas_nrm2(cublasHandle_t handle, vector<T> *x) {
+  return sqrt(thrust::reduce(
+      thrust::transform_iterator<Square<T>, T*>(x->data, Square<T>()),
+      thrust::transform_iterator<Square<T>, T*>(x->data + x->size, Square<T>())));
 }
 
-template <>
-float blas_nrm2(cublasHandle_t handle, vector<float> *x) {
-  float result;
-  cublasStatus_t err = cublasSnrm2(handle, static_cast<int>(x->size), x->data,
-      static_cast<int>(x->stride), &result);
-  CublasCheckError(err);
-  return result;
-}
+// template <>
+// double blas_nrm2(cublasHandle_t handle, vector<double> *x) {
+//   double result;
+//   cublasStatus_t err = cublasDnrm2(handle, static_cast<int>(x->size), x->data,
+//       static_cast<int>(x->stride), &result);
+//   CublasCheckError(err);
+//   return result;
+// }
+// 
+// template <>
+// float blas_nrm2(cublasHandle_t handle, vector<float> *x) {
+//   float result;
+//   cublasStatus_t err = cublasSnrm2(handle, static_cast<int>(x->size), x->data,
+//       static_cast<int>(x->stride), &result);
+//   CublasCheckError(err);
+//   return result;
+// }
 
 // Trsv.
 template <typename T>
