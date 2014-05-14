@@ -12,7 +12,7 @@ namespace cml {
 // Definitions
 typedef unsigned int uint;
 
-const uint kTileSize = 8u; // 32u
+const uint kTileSize = 48u; // 32u
 const uint kBlockSize = 256u;
 const uint kMaxGridSize = 65535u;
 
@@ -400,9 +400,9 @@ struct Square : thrust::unary_function<T, T> {
 
 template <typename T>
 T blas_nrm2(cublasHandle_t handle, vector<T> *x) {
-  return sqrt(thrust::reduce(
-      thrust::transform_iterator<Square<T>, T*>(x->data, Square<T>()),
-      thrust::transform_iterator<Square<T>, T*>(x->data + x->size, Square<T>())));
+  return sqrt(thrust::transform_reduce(thrust::device_pointer_cast(x->data),
+      thrust::device_pointer_cast(x->data + x->size), Square<T>(),
+      static_cast<T>(0.0), thrust::plus<T>()));
 }
 
 // template <>

@@ -5,6 +5,7 @@
 
 #include "cml.cuh"
 #include "solver.hpp"
+#include "timer.hpp"
 
 template <typename T> 
 void RowToColMajor(const T *Arm, size_t m, size_t n, T *Acm);
@@ -51,14 +52,21 @@ void Solver(AdmmData<T> *admm_data) {
   cml::vector<T> yt = cml::vector_subvector(&zt, n, m);
   cml::vector<T> x12 = cml::vector_subvector(&z12, 0, n);
   cml::vector<T> y12 = cml::vector_subvector(&z12, n, m);
-
+  
+  cudaDeviceSynchronize();
+  double t = timer();
   // Compute cholesky decomposition of (I + A^TA) or (I + AA^T)
   cublasOperation_t mult_type = is_skinny ? CUBLAS_OP_T : CUBLAS_OP_N;
   cml::blas_syrk(cb_handle, CUBLAS_FILL_MODE_LOWER, mult_type, kOne, &A, kZero,
                  &AA);
   cml::matrix_memcpy(&L, &AA);
   cml::matrix_add_constant_diag(&L, kOne);
+  cudaDeviceSynchronize();
+  printf("Syrk time %es\n", timer() - t);
+  double t2 = timer();
   cml::linalg_cholesky_decomp(cb_handle, &L);
+  cudaDeviceSynchronize();
+  printf("Factorization time %es\n", timer() - t2);
 
   // Signal start of execution.
   if (!admm_data->quiet)
@@ -121,7 +129,10 @@ void Solver(AdmmData<T> *admm_data) {
     // Make copy of z.
     cml::vector_memcpy(&z_prev, &z);
   }
-  
+
+  cudaDeviceSynchronize();
+  printf("Total time %es\n", timer() - t);
+
   cml::vector_memcpy(admm_data->y, &y12);
   cml::vector_memcpy(admm_data->x, &x12);
 
