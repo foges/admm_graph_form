@@ -516,6 +516,7 @@ __global__ void block_trsv(T *A, uint iter, uint n, uint tda) {
 }
 
 // Cholesky.
+// TODO: Make sure to use cublas stream.
 template <typename T>
 cublasStatus_t linalg_cholesky_decomp(cublasHandle_t handle,
                                       matrix<T> *A) {
