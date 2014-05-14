@@ -60,6 +60,9 @@ void Solver(AdmmData<T> *admm_data) {
   cml::matrix_add_constant_diag(&L, kOne);
   cml::linalg_cholesky_decomp(cb_handle, &L);
 
+  cml::print_matrix(AA);
+  cml::print_matrix(L);
+
   // Signal start of execution.
   if (!admm_data->quiet)
     printf("%4s %12s %10s %10s %10s %10s\n",
@@ -73,6 +76,11 @@ void Solver(AdmmData<T> *admm_data) {
     cml::blas_axpy(cb_handle, -kOne, &yt, &y);
     ProxEval(g, admm_data->rho, x.data, x12.data);
     ProxEval(f, admm_data->rho, y.data, y12.data);
+    
+    cml::print_vector(x12);
+    cml::print_vector(y12);
+    exit(1);
+
     // Project and Update Dual Variables
     cml::blas_axpy(cb_handle, kOne, &x12, &xt);
     cml::blas_axpy(cb_handle, kOne, &y12, &yt);

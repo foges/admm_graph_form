@@ -111,6 +111,18 @@ void matrix_memcpy(T *A, const matrix<T> *B) {
   CudaCheckError(err);
 }
 
+template <typename T>
+void print_matrix(const matrix<T> &A) {
+  T* A_ = new T[A.tda * A.size2];
+  matrix_memcpy(A_, &A);
+  for (unsigned int i = 0; i < A.size1; ++i) {
+    for (unsigned int j = 0; j < A.size2; ++j)
+      printf("%e ", A_[i + j * A.tda]);
+    printf("\n");
+  }
+  printf("\n");
+}
+
 
 //////////////////////////////////////////////////
 //////////////////// Vector //////////////////////
@@ -179,6 +191,16 @@ void vector_memcpy(T *x, const vector<T> *y) {
       cudaMemcpyDefault);
   CudaCheckError(err);
 }
+
+template <typename T>
+void print_vector(const vector<T> &x) {
+  T* x_ = new T[x.size * x.stride];
+  vector_memcpy(x_, &x);
+  for (unsigned int i = 0; i < x.size; ++i)
+    printf("%e ", x_[i * x.stride]);
+  printf("\n");
+}
+
 
 //////////////////////////////////////////////////
 ///////////////////// Math ///////////////////////
@@ -252,16 +274,15 @@ cublasStatus_t blas_syrk(cublasHandle_t handle, cublasFillMode_t uplo,
 // Geam.
 template <typename T>
 cublasStatus_t blas_geam(cublasHandle_t handle, cublasOperation_t transa,
-                             cublasOperation_t transb, const T *alpha,
-                             const matrix<T> *A, const T *beta,
-                             const matrix<T> *B, const matrix<T> *C);
+                         cublasOperation_t transb, const T *alpha,
+                         const matrix<T> *A, const T *beta,
+                         const matrix<T> *B, const matrix<T> *C);
 
 template <>
 cublasStatus_t blas_geam(cublasHandle_t handle, cublasOperation_t transa,
-                             cublasOperation_t transb, const double *alpha,
-                             const matrix<double> *A, const double *beta,
-                             const matrix<double> *B,
-                             const matrix<double> *C) {
+                         cublasOperation_t transb, const double *alpha,
+                         const matrix<double> *A, const double *beta,
+                         const matrix<double> *B, const matrix<double> *C) {
  cublasStatus_t err = cublasDgeam(handle, transa, transb,
      static_cast<int>(C->size1), static_cast<int>(C->size2), alpha, A->data,
      static_cast<int>(A->tda), beta, B->data, static_cast<int>(B->tda), C->data,
@@ -272,10 +293,9 @@ cublasStatus_t blas_geam(cublasHandle_t handle, cublasOperation_t transa,
 
 template <>
 cublasStatus_t blas_geam(cublasHandle_t handle, cublasOperation_t transa,
-                             cublasOperation_t transb, const float *alpha,
-                             const matrix<float> *A, const float *beta,
-                             const matrix<float> *B,
-                             const matrix<float> *C) {
+                         cublasOperation_t transb, const float *alpha,
+                         const matrix<float> *A, const float *beta,
+                         const matrix<float> *B, const matrix<float> *C) {
  cublasStatus_t err = cublasSgeam(handle, transa, transb,
      static_cast<int>(C->size1), static_cast<int>(C->size2), alpha, A->data,
      static_cast<int>(A->tda), beta, B->data, static_cast<int>(B->tda), C->data,
@@ -395,12 +415,12 @@ float blas_nrm2(cublasHandle_t handle, vector<float> *x) {
 template <typename T>
 cublasStatus_t blas_trsv(cublasHandle_t handle, cublasFillMode_t uplo,
                          cublasOperation_t trans, cublasDiagType_t diag,
-                         matrix<T> *A, vector<T> *x);
+                         const matrix<T> *A, vector<T> *x);
 
 template <>
 cublasStatus_t blas_trsv(cublasHandle_t handle, cublasFillMode_t uplo,
                          cublasOperation_t trans, cublasDiagType_t diag,
-                         matrix<double> *A, vector<double> *x) {
+                         const matrix<double> *A, vector<double> *x) {
   cublasStatus_t err = cublasDtrsv(handle, uplo, trans, diag,
       static_cast<int>(A->size1), A->data, static_cast<int>(A->tda), x->data, 
       static_cast<int>(x->stride));
@@ -411,7 +431,7 @@ cublasStatus_t blas_trsv(cublasHandle_t handle, cublasFillMode_t uplo,
 template <>
 cublasStatus_t blas_trsv(cublasHandle_t handle, cublasFillMode_t uplo,
                          cublasOperation_t trans, cublasDiagType_t diag,
-                         matrix<float> *A, vector<float> *x) {
+                         const matrix<float> *A, vector<float> *x) {
   cublasStatus_t err = cublasStrsv(handle, uplo, trans, diag,
       static_cast<int>(A->size1), A->data, static_cast<int>(A->tda), x->data, 
       static_cast<int>(x->stride));
@@ -527,7 +547,7 @@ cublasStatus_t linalg_cholesky_decomp(cublasHandle_t handle,
 
 template <typename T>
 cublasStatus_t linalg_cholesky_svx(cublasHandle_t handle,
-                                   matrix<T> *L, vector<T> *x) {
+                                   const matrix<T> *L, vector<T> *x) {
   
   cublasStatus_t err = blas_trsv(handle, CUBLAS_FILL_MODE_LOWER, CUBLAS_OP_N,
       CUBLAS_DIAG_NON_UNIT, L, x);
