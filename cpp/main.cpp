@@ -3,30 +3,31 @@
 
 #include "solver.hpp"
 
+typedef double real_t;
 
 // Non-Negative Least Squares.
 //   minimize    (1/2) ||Ax - b||_2^2
 //   subject to  x >= 0.
 //
 // See <admm_graph_form>/matlab/test_nonneg_l2.m for detailed description.
-double test1() {
+real_t test1() {
   printf("\nNon-Negative Least Squares.\n");
-  size_t m = 100;
-  size_t n = 2;
-  std::vector<double> A(m * n);
-  std::vector<double> x(n);
-  std::vector<double> y(m);
+  size_t m = 100000;
+  size_t n = 1000;
+  std::vector<real_t> A(m * n);
+  std::vector<real_t> x(n);
+  std::vector<real_t> y(m);
 
   std::default_random_engine generator;
-  std::uniform_real_distribution<double> u_dist(0.0, 1.0);
-  std::normal_distribution<double> n_dist(0.0, 1.0);
+  std::uniform_real_distribution<real_t> u_dist(0.0, 1.0);
+  std::normal_distribution<real_t> n_dist(0.0, 1.0);
 
   // Generate A according to:
   //   A = 1 / n * rand(m, n)
   for (unsigned int i = 0; i < m * n; ++i)
-    A[i] = 1.0 / static_cast<double>(n) * u_dist(generator);
+    A[i] = 1.0 / static_cast<real_t>(n) * u_dist(generator);
 
-  AdmmData<double> admm_data(A.data(), m, n);
+  AdmmData<real_t> admm_data(A.data(), m, n);
   admm_data.x = x.data();
   admm_data.y = y.data();
 
@@ -35,7 +36,7 @@ double test1() {
     // Generate b according to:
     //   n_half = floor(2 * n / 3);
     //   b = A * [ones(n_half, 1); -ones(n - n_half, 1)] + 0.01 * randn(m, 1)
-    double b_i = 0.0;
+    real_t b_i = 0.0;
     for (unsigned int j = 0; j < n; j++)
       b_i += 3 * j < 2 * n ? A[i * n + j] : -A[i * n + j];
     b_i += 0.01 * n_dist(generator);
@@ -57,25 +58,25 @@ double test1() {
 //   subject to  Ax <= b.
 //
 // See <admm_graph_form>/matlab/test_lp_ineq.m for detailed description.
-double test2() {
+real_t test2() {
   printf("\nLinear Program in Inequality Form.\n");
   size_t m = 1000;
   size_t n = 200;
-  std::vector<double> A(m * n);
-  std::vector<double> x(n);
-  std::vector<double> y(m);
+  std::vector<real_t> A(m * n);
+  std::vector<real_t> x(n);
+  std::vector<real_t> y(m);
 
   std::default_random_engine generator;
-  std::uniform_real_distribution<double> u_dist(0.0, 1.0);
+  std::uniform_real_distribution<real_t> u_dist(0.0, 1.0);
 
   // Generate A according to:
   //   A = [-1 / n *rand(m - n, n); -eye(n)]
   for (unsigned int i = 0; i < (m - n) * n; ++i)
-    A[i] = -1.0 / static_cast<double>(n) * u_dist(generator);
+    A[i] = -1.0 / static_cast<real_t>(n) * u_dist(generator);
   for (unsigned int i = static_cast<unsigned int>(n * n); i < m * n; ++i)
     A[i] = i % n == 0 ? -1.0 : 0;
 
-  AdmmData<double> admm_data(A.data(), m, n);
+  AdmmData<real_t> admm_data(A.data(), m, n);
   admm_data.x = x.data();
   admm_data.y = y.data();
 
@@ -83,7 +84,7 @@ double test2() {
   //   b = A * rand(n, 1) + 0.2 * rand(m, 1)
   admm_data.f.reserve(m);
   for (unsigned int i = 0; i < m; ++i) {
-    double b_i = 0.0;
+    real_t b_i = 0.0;
     for (unsigned int j = 0; j < n; ++j)
       b_i += A[i * n + j] * u_dist(generator);
     b_i += 0.2 * u_dist(generator);
@@ -108,37 +109,37 @@ double test2() {
 //               x >= 0.
 //
 // See <admm_graph_form>/matlab/test_lp_eq.m for detailed description.
-double test3() {
+real_t test3() {
   printf("\nLinear Program in Equality Form.\n");
   size_t m = 200;
   size_t n = 1000;
-  std::vector<double> A((m + 1) * n);
-  std::vector<double> x(n);
-  std::vector<double> y(m + 1);
+  std::vector<real_t> A((m + 1) * n);
+  std::vector<real_t> x(n);
+  std::vector<real_t> y(m + 1);
 
   std::default_random_engine generator;
-  std::uniform_real_distribution<double> u_dist(0.0, 1.0);
+  std::uniform_real_distribution<real_t> u_dist(0.0, 1.0);
 
   // Generate A and c according to:
   //   A = rand(m, n)
   //   c = rand(n, 1)
   for (unsigned int i = 0; i < (m + 1) * n; ++i)
-    A[i] = 1.0 / static_cast<double>(n) * u_dist(generator);
+    A[i] = 1.0 / static_cast<real_t>(n) * u_dist(generator);
 
-  AdmmData<double> admm_data(A.data(), m + 1, n);
+  AdmmData<real_t> admm_data(A.data(), m + 1, n);
   admm_data.x = x.data();
   admm_data.y = y.data();
 
   // Generate b according to:
   //   v = rand(n, 1)
   //   b = A * v
-  std::vector<double> v(n);
+  std::vector<real_t> v(n);
   for (unsigned int i = 0; i < n; ++i)
     v[i] = u_dist(generator);
 
   admm_data.f.reserve(m + 1);
   for (unsigned int i = 0; i < m; ++i) {
-    double b_i = 0.0;
+    real_t b_i = 0.0;
     for (unsigned int j = 0; j < n; ++j)
       b_i += A[i * n + j] * v[j];
     admm_data.f.emplace_back(kIndEq0, 1.0, b_i);
@@ -159,35 +160,35 @@ double test3() {
 //   minimize    (1/2) ||w||_2^2 + \lambda \sum (a_i^T * [w; b] + 1)_+.
 //
 // See <admm_graph_form>/matlab/test_svm.m for detailed description.
-double test4() {
+real_t test4() {
   printf("\nSupport Vector Machine.\n");
   size_t m = 1000;
   size_t n = 100;
-  std::vector<double> A(m * (n + 1));
-  std::vector<double> x(n + 1);
-  std::vector<double> y(m);
+  std::vector<real_t> A(m * (n + 1));
+  std::vector<real_t> x(n + 1);
+  std::vector<real_t> y(m);
 
   std::default_random_engine generator;
-  std::uniform_real_distribution<double> u_dist(0.0, 1.0);
-  std::normal_distribution<double> n_dist(0.0, 1.0);
+  std::uniform_real_distribution<real_t> u_dist(0.0, 1.0);
+  std::normal_distribution<real_t> n_dist(0.0, 1.0);
 
   // Generate A according to:
   //   x = [randn(N, n) + ones(N, n); randn(N, n) - ones(N, n)]
   //   y = [ones(N, 1); -ones(N, 1)]
   //   A = [(-y * ones(1, n)) .* x, -y]
   for (unsigned int i = 0; i < m; ++i) {
-    double sign_yi = i < m / 2 ? 1.0 : -1.0;
+    real_t sign_yi = i < m / 2 ? 1.0 : -1.0;
     for (unsigned int j = 0; j < n; ++j) {
       A[i * (n + 1) + j] = -sign_yi * (n_dist(generator) + sign_yi);
     }
     A[i * (n + 1) + n] = -sign_yi;
   }
 
-  AdmmData<double> admm_data(A.data(), m, n + 1);
+  AdmmData<real_t> admm_data(A.data(), m, n + 1);
   admm_data.x = x.data();
   admm_data.y = y.data();
 
-  double lambda = 1.0;
+  real_t lambda = 1.0;
 
   admm_data.f.reserve(m);
   for (unsigned int i = 0; i < m; ++i)
@@ -204,8 +205,8 @@ double test4() {
 
 int main() {
   test1();
-  test2();
-  test3();
-  test4();
+  // test2();
+  // test3();
+  // test4();
 }
 
