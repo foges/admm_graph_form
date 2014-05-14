@@ -552,12 +552,12 @@ cublasStatus_t linalg_cholesky_svx(cublasHandle_t handle,
   
   cublasStatus_t err = blas_trsv(handle, CUBLAS_FILL_MODE_LOWER, CUBLAS_OP_N,
       CUBLAS_DIAG_NON_UNIT, L, x);
-
-  if (err != CUBLAS_STATUS_SUCCESS)
-    err = blas_trsv(handle, CUBLAS_FILL_MODE_LOWER, CUBLAS_OP_T,
-        CUBLAS_DIAG_NON_UNIT, L, x); 
-
   CublasCheckError(err);
+  
+  err = blas_trsv(handle, CUBLAS_FILL_MODE_LOWER, CUBLAS_OP_T,
+        CUBLAS_DIAG_NON_UNIT, L, x); 
+  CublasCheckError(err);
+
   return err;
 }
 
