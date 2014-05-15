@@ -4,6 +4,7 @@
 #include <cublas_v2.h>
 
 #include <algorithm>
+#include <thrust/functional.h>
 
 #include "utils.cuh"
 
@@ -12,7 +13,7 @@ namespace cml {
 // Definitions
 typedef unsigned int uint;
 
-const uint kTileSize = 48u; // 32u
+const uint kTileSize = 32u;
 const uint kBlockSize = 256u;
 const uint kMaxGridSize = 65535u;
 
@@ -405,23 +406,26 @@ T blas_nrm2(cublasHandle_t handle, vector<T> *x) {
       static_cast<T>(0.0), thrust::plus<T>()));
 }
 
-// template <>
-// double blas_nrm2(cublasHandle_t handle, vector<double> *x) {
-//   double result;
-//   cublasStatus_t err = cublasDnrm2(handle, static_cast<int>(x->size), x->data,
-//       static_cast<int>(x->stride), &result);
-//   CublasCheckError(err);
-//   return result;
-// }
-// 
-// template <>
-// float blas_nrm2(cublasHandle_t handle, vector<float> *x) {
-//   float result;
-//   cublasStatus_t err = cublasSnrm2(handle, static_cast<int>(x->size), x->data,
-//       static_cast<int>(x->stride), &result);
-//   CublasCheckError(err);
-//   return result;
-// }
+template <typename T>
+cublasStatus_t blas_nrm2(cublasHandle_t handle, vector<T> *x, T *result);
+
+template <>
+cublasStatus_t blas_nrm2(cublasHandle_t handle, vector<double> *x,
+                         double *result) {
+  cublasStatus_t err = cublasDnrm2(handle, static_cast<int>(x->size), x->data,
+      static_cast<int>(x->stride), result);
+  CublasCheckError(err);
+  return err;
+}
+
+template <>
+cublasStatus_t blas_nrm2(cublasHandle_t handle, vector<float> *x,
+                         float *result) {
+  cublasStatus_t err = cublasSnrm2(handle, static_cast<int>(x->size), x->data,
+      static_cast<int>(x->stride), result);
+  CublasCheckError(err);
+  return err;
+}
 
 // Trsv.
 template <typename T>
@@ -527,21 +531,22 @@ __global__ void block_trsv(T *A, uint iter, uint n, uint tda) {
 }
 
 // Cholesky.
-// TODO: Make sure to use cublas stream.
 template <typename T>
 cublasStatus_t linalg_cholesky_decomp(cublasHandle_t handle,
                                       matrix<T> *A) {
-  cublasStatus_t err = CUBLAS_STATUS_SUCCESS;
+  cudaStream_t stm;
+  cublasStatus_t err = cublasGetStream(handle, &stm);
 
   uint num_tiles = (A->size1 + kTileSize - 1u) / kTileSize;
   for (uint i = 0; i < num_tiles; ++i) {
+    if (err != CUBLAS_STATUS_SUCCESS)
+      break;
     uint block_dim_1d = std::min<uint>(kTileSize, A->size1 - i * kTileSize);
     dim3 block_dim(block_dim_1d, block_dim_1d);
-    block_chol<<<1, block_dim>>>(A->data, i, A->tda);
-
+    block_chol<<<1, block_dim, 0, stm>>>(A->data, i, A->tda);
     if (i < num_tiles - 1u) {
       uint grid_dim = num_tiles - i - 1u;
-      block_trsv<<<grid_dim, kTileSize>>>(A->data, i, A->size1, A->tda);
+      block_trsv<<<grid_dim, kTileSize, 0, stm>>>(A->data, i, A->size1, A->tda);
 
       matrix<T> L12 = matrix_submatrix(A, (i + 1) * kTileSize, i * kTileSize,
           A->size1 - (i + 1) * kTileSize, kTileSize);
@@ -550,8 +555,6 @@ cublasStatus_t linalg_cholesky_decomp(cublasHandle_t handle,
           A->size1 - (i + 1) * kTileSize);
       err = blas_syrk(handle, CUBLAS_FILL_MODE_LOWER, CUBLAS_OP_N,
          static_cast<T>(-1), &L12, static_cast<T>(1), &L22);
-      if (err != CUBLAS_STATUS_SUCCESS)
-        break;
     }
   }
   CublasCheckError(err);
