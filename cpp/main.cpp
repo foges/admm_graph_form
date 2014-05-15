@@ -12,8 +12,8 @@ typedef double real_t;
 // See <admm_graph_form>/matlab/test_nonneg_l2.m for detailed description.
 real_t test1() {
   printf("\nNon-Negative Least Squares.\n");
-  size_t m = 100000;
-  size_t n = 1000;
+  size_t m = 1000;
+  size_t n = 200;
   std::vector<real_t> A(m * n);
   std::vector<real_t> x(n);
   std::vector<real_t> y(m);
@@ -205,8 +205,8 @@ real_t test4() {
 
 int main() {
   test1();
-  // test2();
-  // test3();
-  // test4();
+  test2();
+  test3();
+  test4();
 }
 

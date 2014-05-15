@@ -80,13 +80,13 @@ __DEVICE__ inline T MaxNeg(T x) {
 
 
 // Proximal operator definitions.
-// 
+//
 // Each of the following functions corresponds to one of the Function enums.
 // All functions accept one argument x and five parameters (a, b, c, d and rho)
 // and returns the evaluation of
-// 
+//
 //   x -> Prox{c * f(a * x - b) + d * x},
-// 
+//
 // where Prox{.} is the proximal operator with penalty parameter rho.
 template <typename T>
 __DEVICE__ inline T ProxAbs(T x, T a, T b, T c, T d, T rho) {
@@ -217,11 +217,11 @@ __DEVICE__ inline T ProxEval(const FunctionObj<T> &f_obj, T x, T rho) {
 
 
 // Function definitions.
-// 
+//
 // Each of the following functions corresponds to one of the Function enums.
 // All functions accept one argument x and four parameters (a, b, c, and d)
 // and returns the evaluation of
-// 
+//
 //   x -> c * f(a * x - b) + d * x.
 template <typename T>
 __DEVICE__ inline T FuncAbs(T x, T a, T b, T c, T d) {
@@ -251,7 +251,7 @@ __DEVICE__ inline T FuncIndEq0(T x, T a, T b, T c, T d) {
 
 template <typename T>
 __DEVICE__ inline T FuncIndGe0(T x, T a, T b, T c, T d) {
-  return d * x; 
+  return d * x;
 }
 
 template <typename T>
@@ -329,7 +329,7 @@ __DEVICE__ inline T FuncEval(const FunctionObj<T> &f_obj, T x) {
 
 
 // Evaluates the proximal operator Prox{f_obj[i]}(x_in[i]) -> x_out[i].
-// 
+//
 // @param f_obj Vector of function objects.
 // @param rho Penalty parameter.
 // @param x_in Array to which proximal operator will be applied.
@@ -344,7 +344,7 @@ void ProxEval(const std::vector<FunctionObj<T> > &f_obj, T rho, const T* x_in,
 
 
 // Returns evalution of Sum_i Func{f_obj[i]}(x_in[i]).
-// 
+//
 // @param f_obj Vector of function objects.
 // @param x_in Array to which function will be applied.
 // @param x_out Array to which result will be written.
@@ -363,7 +363,7 @@ template <typename T>
 struct ProxEvalF : thrust::binary_function<FunctionObj<T>, T, T> {
   T rho;
   __device__ ProxEvalF(T rho) : rho(rho) { }
-  __device__ T operator()(const FunctionObj<T> &f_obj, const T &x) {
+  __device__ T operator()(const FunctionObj<T> &f_obj, T x) {
     return ProxEval(f_obj, x, rho);
   }
 };
@@ -378,7 +378,7 @@ void ProxEval(const thrust::device_vector<FunctionObj<T> > &f_obj, T rho,
 
 template <typename T>
 struct FuncEvalF : thrust::binary_function<FunctionObj<T>, T, T> {
-  __device__ T operator()(const FunctionObj<T> &f_obj, const T &x) {
+  __device__ T operator()(const FunctionObj<T> &f_obj, T x) {
     return FuncEval(f_obj, x);
   }
 };

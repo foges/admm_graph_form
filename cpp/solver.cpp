@@ -7,7 +7,6 @@
 #include <vector>
 
 #include "solver.hpp"
-#include "timer.hpp"
 
 template<>
 void Solver(AdmmData<double> *admm_data) {
@@ -34,18 +33,14 @@ void Solver(AdmmData<double> *admm_data) {
   gsl_vector_view yt = gsl_vector_subvector(zt, n, m);
   gsl_vector_view x12 = gsl_vector_subvector(z12, 0, n);
   gsl_vector_view y12 = gsl_vector_subvector(z12, n, m);
-  
+
   // Compute cholesky decomposition of (I + A^TA) or (I + AA^T)
-  double t = timer();
   CBLAS_TRANSPOSE_t mult_type = is_skinny ? CblasTrans : CblasNoTrans;
   gsl_blas_dsyrk(CblasLower, mult_type, 1.0, &A.matrix, 0.0, AA);
   gsl_matrix_memcpy(L, AA);
   for (unsigned int i = 0; i < min_dim; ++i)
     *gsl_matrix_ptr(L, i, i) += 1.0;
-  printf("Syrk time %es\n", timer() - t);
-  double t2 = timer();
   gsl_linalg_cholesky_decomp(L);
-  printf("Factorization time %es\n", timer() - t2);
 
   // Signal start of execution.
   if (!admm_data->quiet)
@@ -109,7 +104,6 @@ void Solver(AdmmData<double> *admm_data) {
     gsl_vector_memcpy(z_prev, z);
   }
 
-  printf("Total time %es\n", timer() - t);
   // Copy results to output.
   for (unsigned int i = 0; i < m; ++i)
     admm_data->y[i] = gsl_vector_get(&y12.vector, i);

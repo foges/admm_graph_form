@@ -2,11 +2,11 @@
 #define CUDA_UTIL_CUH_
 
 #include <cublas_v2.h>
-
-#include <algorithm>
 #include <thrust/functional.h>
 
-#include "utils.cuh"
+#include <algorithm>
+
+#include "cml_utils.cuh"
 
 // Cuda Matrix Library
 namespace cml {
@@ -55,7 +55,7 @@ matrix<T> matrix_alloc(size_t m, size_t n) {
   mat.size1 = m;
   mat.size2 = n;
   mat.tda = m;
-  cudaError_t err = cudaMalloc(reinterpret_cast<void**>(&mat.data), 
+  cudaError_t err = cudaMalloc(reinterpret_cast<void**>(&mat.data),
       m * n * sizeof(T));
   CudaCheckError(err);
   return mat;
@@ -256,7 +256,6 @@ cublasStatus_t blas_syrk(cublasHandle_t handle, cublasFillMode_t uplo,
       &beta, C->data, static_cast<int>(C->tda));
   CublasCheckError(err);
   return err;
-
 }
 
 template <>
@@ -270,7 +269,6 @@ cublasStatus_t blas_syrk(cublasHandle_t handle, cublasFillMode_t uplo,
       &beta, C->data, static_cast<int>(C->tda));
   CublasCheckError(err);
   return err;
-
 }
 
 // Geam.
@@ -285,10 +283,10 @@ cublasStatus_t blas_geam(cublasHandle_t handle, cublasOperation_t transa,
                          cublasOperation_t transb, const double *alpha,
                          const matrix<double> *A, const double *beta,
                          const matrix<double> *B, const matrix<double> *C) {
- cublasStatus_t err = cublasDgeam(handle, transa, transb,
-     static_cast<int>(C->size1), static_cast<int>(C->size2), alpha, A->data,
-     static_cast<int>(A->tda), beta, B->data, static_cast<int>(B->tda), C->data,
-     static_cast<int>(C->tda));
+  cublasStatus_t err = cublasDgeam(handle, transa, transb,
+      static_cast<int>(C->size1), static_cast<int>(C->size2), alpha, A->data,
+      static_cast<int>(A->tda), beta, B->data, static_cast<int>(B->tda),
+      C->data, static_cast<int>(C->tda));
   CublasCheckError(err);
   return err;
 }
@@ -298,10 +296,10 @@ cublasStatus_t blas_geam(cublasHandle_t handle, cublasOperation_t transa,
                          cublasOperation_t transb, const float *alpha,
                          const matrix<float> *A, const float *beta,
                          const matrix<float> *B, const matrix<float> *C) {
- cublasStatus_t err = cublasSgeam(handle, transa, transb,
-     static_cast<int>(C->size1), static_cast<int>(C->size2), alpha, A->data,
-     static_cast<int>(A->tda), beta, B->data, static_cast<int>(B->tda), C->data,
-     static_cast<int>(C->tda));
+  cublasStatus_t err = cublasSgeam(handle, transa, transb,
+      static_cast<int>(C->size1), static_cast<int>(C->size2), alpha, A->data,
+      static_cast<int>(A->tda), beta, B->data, static_cast<int>(B->tda),
+      C->data, static_cast<int>(C->tda));
   CublasCheckError(err);
   return err;
 }
@@ -365,7 +363,7 @@ cublasStatus_t blas_gemv(cublasHandle_t handle, cublasOperation_t trans,
 // Symv.
 template <typename T>
 cublasStatus_t blas_symv(cublasHandle_t handle, cublasFillMode_t uplo,
-                        T alpha, matrix<T> *A, const vector<T> *x, T beta, 
+                        T alpha, matrix<T> *A, const vector<T> *x, T beta,
                         vector<T> *y);
 
 template <>
@@ -438,7 +436,7 @@ cublasStatus_t blas_trsv(cublasHandle_t handle, cublasFillMode_t uplo,
                          cublasOperation_t trans, cublasDiagType_t diag,
                          const matrix<double> *A, vector<double> *x) {
   cublasStatus_t err = cublasDtrsv(handle, uplo, trans, diag,
-      static_cast<int>(A->size1), A->data, static_cast<int>(A->tda), x->data, 
+      static_cast<int>(A->size1), A->data, static_cast<int>(A->tda), x->data,
       static_cast<int>(x->stride));
   CublasCheckError(err);
   return err;
@@ -449,7 +447,7 @@ cublasStatus_t blas_trsv(cublasHandle_t handle, cublasFillMode_t uplo,
                          cublasOperation_t trans, cublasDiagType_t diag,
                          const matrix<float> *A, vector<float> *x) {
   cublasStatus_t err = cublasStrsv(handle, uplo, trans, diag,
-      static_cast<int>(A->size1), A->data, static_cast<int>(A->tda), x->data, 
+      static_cast<int>(A->size1), A->data, static_cast<int>(A->tda), x->data,
       static_cast<int>(x->stride));
   CublasCheckError(err);
   return err;
@@ -479,7 +477,7 @@ __global__ void block_chol(T *A, uint iter, uint tda) {
   for (uint i = 0; i < mat_dim; ++i) {
     T rl11 = math_rsqrt(L[i + i * kSmTda]);
     __syncthreads();
-    if (row >= i && col == 0) 
+    if (row >= i && col == 0)
       L[row + i * kSmTda] *= rl11;
     __syncthreads();
     if (row >= col && col > i)
@@ -495,26 +493,26 @@ template <typename T>
 __global__ void block_trsv(T *A, uint iter, uint n, uint tda) {
   uint tile_idx = blockIdx.x;
   uint row = threadIdx.x;
-  
+
   const uint kSmTda = kTileSize + 1u;
   __shared__ T L[kSmTda * kTileSize];
   __shared__ T A12[kSmTda * kTileSize];
 
   uint global_col = iter * kTileSize;
   uint global_row = iter * kTileSize + row;
-  
+
   // Load A -> L column-wise.
   for (uint i = 0; i < kTileSize; ++i)
     L[row + i * kSmTda] = A[global_row + (global_col + i) * tda];
-  
+
   global_row = row + (iter + tile_idx + 1u) * kTileSize;
-  
+
   if (global_row < n) {
     for (uint i = 0; i < kTileSize; ++i)
       A12[row + i * kSmTda] = A[global_row + (global_col + i) * tda];
   }
   __syncthreads();
-  
+
   if (global_row < n) {
     for (uint i = 0; i < kTileSize; ++i) {
       for (uint j = 0; j < i; ++j)
@@ -523,7 +521,7 @@ __global__ void block_trsv(T *A, uint iter, uint n, uint tda) {
     }
   }
   __syncthreads();
-  
+
   if (global_row < n) {
     for (uint i = 0; i < kTileSize; ++i)
       A[global_row + (global_col + i) * tda] = A12[row + i * kSmTda];
@@ -564,13 +562,12 @@ cublasStatus_t linalg_cholesky_decomp(cublasHandle_t handle,
 template <typename T>
 cublasStatus_t linalg_cholesky_svx(cublasHandle_t handle,
                                    const matrix<T> *L, vector<T> *x) {
-  
   cublasStatus_t err = blas_trsv(handle, CUBLAS_FILL_MODE_LOWER, CUBLAS_OP_N,
       CUBLAS_DIAG_NON_UNIT, L, x);
   CublasCheckError(err);
-  
+
   err = blas_trsv(handle, CUBLAS_FILL_MODE_LOWER, CUBLAS_OP_T,
-        CUBLAS_DIAG_NON_UNIT, L, x); 
+        CUBLAS_DIAG_NON_UNIT, L, x);
   CublasCheckError(err);
 
   return err;
@@ -592,6 +589,6 @@ cublasStatus_t matrix_add_constant_diag(matrix<T> *A, T val) {
   return CUBLAS_STATUS_SUCCESS;
 }
 
-}  // namespace
+}  // namespace cml
 #endif /* CUDA_UTIL_CUH_ */
 

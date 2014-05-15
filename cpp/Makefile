@@ -36,6 +36,10 @@ solver_cu_link.o: solver_cu.o
 solver_cu.o: solver.cu solver.hpp prox_lib.hpp cml.cuh
 	$(CUXX) $(CUFLAGS) $< -dc -o $@
 
+# Chol Test
+chol_test: chol_test.cu
+	nvcc $< $(CUFLAGS) $(CULDFLAGS_) -lgsl -lm -I/usr/local/include -O3 -o $@
+
 clean:
 	rm -f *.o *~ *~ main
 	rm -rf *.dSYM

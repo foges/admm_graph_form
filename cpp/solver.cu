@@ -1,13 +1,12 @@
+#include <thrust/device_vector.h>
+
 #include <algorithm>
 #include <vector>
 
-#include <thrust/device_vector.h>
-
 #include "cml.cuh"
 #include "solver.hpp"
-#include "timer.hpp"
 
-template <typename T> 
+template <typename T>
 void RowToColMajor(const T *Arm, size_t m, size_t n, T *Acm);
 
 template <typename T>
@@ -22,8 +21,8 @@ void Solver(AdmmData<T> *admm_data) {
   const T kZero = static_cast<T>(0);
 
   // Create cuBLAS handle.
-  cublasHandle_t cb_handle;
-  cublasCreate(&cb_handle);
+  cublasHandle_t handle;
+  cublasCreate(&handle);
 
   // Allocate data for ADMM variables.
   cml::vector<T> z = cml::vector_calloc<T>(m + n);
@@ -52,21 +51,14 @@ void Solver(AdmmData<T> *admm_data) {
   cml::vector<T> yt = cml::vector_subvector(&zt, n, m);
   cml::vector<T> x12 = cml::vector_subvector(&z12, 0, n);
   cml::vector<T> y12 = cml::vector_subvector(&z12, n, m);
-  
-  cudaDeviceSynchronize();
-  double t = timer();
+
   // Compute cholesky decomposition of (I + A^TA) or (I + AA^T)
   cublasOperation_t mult_type = is_skinny ? CUBLAS_OP_T : CUBLAS_OP_N;
-  cml::blas_syrk(cb_handle, CUBLAS_FILL_MODE_LOWER, mult_type, kOne, &A, kZero,
+  cml::blas_syrk(handle, CUBLAS_FILL_MODE_LOWER, mult_type, kOne, &A, kZero,
                  &AA);
   cml::matrix_memcpy(&L, &AA);
   cml::matrix_add_constant_diag(&L, kOne);
-  cudaDeviceSynchronize();
-  printf("Syrk time %es\n", timer() - t);
-  double t2 = timer();
-  cml::linalg_cholesky_decomp(cb_handle, &L);
-  cudaDeviceSynchronize();
-  printf("Factorization time %es\n", timer() - t2);
+  cml::linalg_cholesky_decomp(handle, &L);
 
   // Signal start of execution.
   if (!admm_data->quiet)
@@ -77,43 +69,42 @@ void Solver(AdmmData<T> *admm_data) {
 
   for (unsigned int k = 0; k < admm_data->max_iter; ++k) {
     // Evaluate Proximal Operators
-    cml::blas_axpy(cb_handle, -kOne, &xt, &x);
-    cml::blas_axpy(cb_handle, -kOne, &yt, &y);
+    cml::blas_axpy(handle, -kOne, &xt, &x);
+    cml::blas_axpy(handle, -kOne, &yt, &y);
     ProxEval(g, admm_data->rho, x.data, x12.data);
     ProxEval(f, admm_data->rho, y.data, y12.data);
-    
+
     // Project and Update Dual Variables
-    cml::blas_axpy(cb_handle, kOne, &x12, &xt);
-    cml::blas_axpy(cb_handle, kOne, &y12, &yt);
+    cml::blas_axpy(handle, kOne, &x12, &xt);
+    cml::blas_axpy(handle, kOne, &y12, &yt);
     if (is_skinny) {
       cml::vector_memcpy(&x, &xt);
-      cml::blas_gemv(cb_handle, CUBLAS_OP_T, kOne, &A, &yt, kOne, &x);
-      cml::linalg_cholesky_svx(cb_handle, &L, &x);
-      cml::blas_gemv(cb_handle, CUBLAS_OP_N, kOne, &A, &x, kZero, &y);
-      cml::blas_axpy(cb_handle, -kOne, &y, &yt);
+      cml::blas_gemv(handle, CUBLAS_OP_T, kOne, &A, &yt, kOne, &x);
+      cml::linalg_cholesky_svx(handle, &L, &x);
+      cml::blas_gemv(handle, CUBLAS_OP_N, kOne, &A, &x, kZero, &y);
+      cml::blas_axpy(handle, -kOne, &y, &yt);
     } else {
-      cml::blas_gemv(cb_handle, CUBLAS_OP_N, kOne, &A, &xt, kZero, &y);
-      cml::blas_symv(cb_handle, CUBLAS_FILL_MODE_LOWER, kOne, &AA, &yt, kOne,
-                     &y);
-      cml::linalg_cholesky_svx(cb_handle, &L, &y);
-      cml::blas_axpy(cb_handle, -kOne, &y, &yt);
+      cml::blas_gemv(handle, CUBLAS_OP_N, kOne, &A, &xt, kZero, &y);
+      cml::blas_symv(handle, CUBLAS_FILL_MODE_LOWER, kOne, &AA, &yt, kOne, &y);
+      cml::linalg_cholesky_svx(handle, &L, &y);
+      cml::blas_axpy(handle, -kOne, &y, &yt);
       cml::vector_memcpy(&x, &xt);
-      cml::blas_gemv(cb_handle, CUBLAS_OP_T, kOne, &A, &yt, kOne, &x);
+      cml::blas_gemv(handle, CUBLAS_OP_T, kOne, &A, &yt, kOne, &x);
     }
-    cml::blas_axpy(cb_handle, -kOne, &x, &xt);
+    cml::blas_axpy(handle, -kOne, &x, &xt);
 
     // Compute primal and dual tolerances.
-    T nrm_z = cml::blas_nrm2(cb_handle, &z);
-    T nrm_zt = cml::blas_nrm2(cb_handle, &zt);
-    T nrm_z12 = cml::blas_nrm2(cb_handle, &z12);
+    T nrm_z = cml::blas_nrm2(handle, &z);
+    T nrm_zt = cml::blas_nrm2(handle, &zt);
+    T nrm_z12 = cml::blas_nrm2(handle, &z12);
     T eps_pri = sqrtn_atol + admm_data->rel_tol * std::max(nrm_z12, nrm_z);
     T eps_dual = sqrtn_atol + admm_data->rel_tol * admm_data->rho * nrm_zt;
 
     // Compute ||r^k||_2 and ||s^k||_2.
-    cml::blas_axpy(cb_handle, -kOne, &z, &z12);
-    cml::blas_axpy(cb_handle, -kOne, &z, &z_prev);
-    T nrm_r = cml::blas_nrm2(cb_handle, &z12);
-    T nrm_s = admm_data->rho * cml::blas_nrm2(cb_handle, &z_prev);
+    cml::blas_axpy(handle, -kOne, &z, &z12);
+    cml::blas_axpy(handle, -kOne, &z, &z_prev);
+    T nrm_r = cml::blas_nrm2(handle, &z12);
+    T nrm_s = admm_data->rho * cml::blas_nrm2(handle, &z_prev);
 
     // Evaluate stopping criteria.
     bool converged = nrm_r <= eps_pri && nrm_s <= eps_dual;
@@ -130,9 +121,6 @@ void Solver(AdmmData<T> *admm_data) {
     cml::vector_memcpy(&z_prev, &z);
   }
 
-  cudaDeviceSynchronize();
-  printf("Total time %es\n", timer() - t);
-
   cml::vector_memcpy(admm_data->y, &y12);
   cml::vector_memcpy(admm_data->x, &x12);
 
@@ -146,7 +134,7 @@ void Solver(AdmmData<T> *admm_data) {
   cml::vector_free(&z_prev);
 }
 
-template <typename T> 
+template <typename T>
 void RowToColMajor(const T *Arm, size_t m, size_t n, T *Acm) {
   for (unsigned int i = 0; i < m; ++i)
     for (unsigned int j = 0; j < n; ++j)
