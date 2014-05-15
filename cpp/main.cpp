@@ -19,13 +19,15 @@ real_t test1() {
   std::vector<real_t> y(m);
 
   std::default_random_engine generator;
-  std::uniform_real_distribution<real_t> u_dist(0.0, 1.0);
-  std::normal_distribution<real_t> n_dist(0.0, 1.0);
+  std::uniform_real_distribution<real_t> u_dist(static_cast<real_t>(0),
+                                                static_cast<real_t>(1));
+  std::normal_distribution<real_t> n_dist(static_cast<real_t>(0),
+                                          static_cast<real_t>(1));
 
   // Generate A according to:
   //   A = 1 / n * rand(m, n)
   for (unsigned int i = 0; i < m * n; ++i)
-    A[i] = 1.0 / static_cast<real_t>(n) * u_dist(generator);
+    A[i] = static_cast<real_t>(1) / static_cast<real_t>(n) * u_dist(generator);
 
   AdmmData<real_t> admm_data(A.data(), m, n);
   admm_data.x = x.data();
@@ -35,12 +37,12 @@ real_t test1() {
   for (unsigned int i = 0; i < m; ++i) {
     // Generate b according to:
     //   n_half = floor(2 * n / 3);
-    //   b = A * [ones(n_half, 1); -ones(n - n_half, 1)] + 0.01 * randn(m, 1)
-    real_t b_i = 0.0;
+    //   b = A * [ones(n_half, 1); -ones(n - n_half, 1)] + 0.1 * randn(m, 1)
+    real_t b_i = static_cast<real_t>(0);
     for (unsigned int j = 0; j < n; j++)
       b_i += 3 * j < 2 * n ? A[i * n + j] : -A[i * n + j];
-    b_i += 0.01 * n_dist(generator);
-    admm_data.f.emplace_back(kSquare, 1.0, b_i);
+    b_i += static_cast<real_t>(0.01) * n_dist(generator);
+    admm_data.f.emplace_back(kSquare, static_cast<real_t>(1), b_i);
   }
 
   admm_data.g.reserve(n);
@@ -67,14 +69,15 @@ real_t test2() {
   std::vector<real_t> y(m);
 
   std::default_random_engine generator;
-  std::uniform_real_distribution<real_t> u_dist(0.0, 1.0);
+  std::uniform_real_distribution<real_t> u_dist(static_cast<real_t>(0),
+                                                static_cast<real_t>(1));
 
   // Generate A according to:
   //   A = [-1 / n *rand(m - n, n); -eye(n)]
   for (unsigned int i = 0; i < (m - n) * n; ++i)
-    A[i] = -1.0 / static_cast<real_t>(n) * u_dist(generator);
+    A[i] = -static_cast<real_t>(1) / static_cast<real_t>(n) * u_dist(generator);
   for (unsigned int i = static_cast<unsigned int>(n * n); i < m * n; ++i)
-    A[i] = i % n == 0 ? -1.0 : 0;
+    A[i] = i % (n + 1) == 0 ? static_cast<real_t>(-1) : static_cast<real_t>(0);
 
   AdmmData<real_t> admm_data(A.data(), m, n);
   admm_data.x = x.data();
@@ -84,11 +87,11 @@ real_t test2() {
   //   b = A * rand(n, 1) + 0.2 * rand(m, 1)
   admm_data.f.reserve(m);
   for (unsigned int i = 0; i < m; ++i) {
-    real_t b_i = 0.0;
+    real_t b_i = static_cast<real_t>(0);
     for (unsigned int j = 0; j < n; ++j)
       b_i += A[i * n + j] * u_dist(generator);
-    b_i += 0.2 * u_dist(generator);
-    admm_data.f.emplace_back(kIndLe0, 1.0, b_i);
+    b_i += static_cast<real_t>(0.2) * u_dist(generator);
+    admm_data.f.emplace_back(kIndLe0, static_cast<real_t>(1), b_i);
   }
 
   // Generate c according to:
@@ -118,13 +121,14 @@ real_t test3() {
   std::vector<real_t> y(m + 1);
 
   std::default_random_engine generator;
-  std::uniform_real_distribution<real_t> u_dist(0.0, 1.0);
+  std::uniform_real_distribution<real_t> u_dist(static_cast<real_t>(0),
+                                                static_cast<real_t>(1));
 
   // Generate A and c according to:
   //   A = rand(m, n)
   //   c = rand(n, 1)
   for (unsigned int i = 0; i < (m + 1) * n; ++i)
-    A[i] = 1.0 / static_cast<real_t>(n) * u_dist(generator);
+    A[i] = u_dist(generator);
 
   AdmmData<real_t> admm_data(A.data(), m + 1, n);
   admm_data.x = x.data();
@@ -139,10 +143,10 @@ real_t test3() {
 
   admm_data.f.reserve(m + 1);
   for (unsigned int i = 0; i < m; ++i) {
-    real_t b_i = 0.0;
+    real_t b_i = static_cast<real_t>(0);
     for (unsigned int j = 0; j < n; ++j)
       b_i += A[i * n + j] * v[j];
-    admm_data.f.emplace_back(kIndEq0, 1.0, b_i);
+    admm_data.f.emplace_back(kIndEq0, static_cast<real_t>(1), b_i);
   }
   admm_data.f.emplace_back(kIdentity);
 
@@ -169,15 +173,18 @@ real_t test4() {
   std::vector<real_t> y(m);
 
   std::default_random_engine generator;
-  std::uniform_real_distribution<real_t> u_dist(0.0, 1.0);
-  std::normal_distribution<real_t> n_dist(0.0, 1.0);
+  std::uniform_real_distribution<real_t> u_dist(static_cast<real_t>(0),
+                                                static_cast<real_t>(1));
+  std::normal_distribution<real_t> n_dist(static_cast<real_t>(0),
+                                          static_cast<real_t>(1));
 
   // Generate A according to:
   //   x = [randn(N, n) + ones(N, n); randn(N, n) - ones(N, n)]
   //   y = [ones(N, 1); -ones(N, 1)]
   //   A = [(-y * ones(1, n)) .* x, -y]
   for (unsigned int i = 0; i < m; ++i) {
-    real_t sign_yi = i < m / 2 ? 1.0 : -1.0;
+    real_t sign_yi = i < m / 2 ? static_cast<real_t>(1) :
+                                 static_cast<real_t>(-1);
     for (unsigned int j = 0; j < n; ++j) {
       A[i * (n + 1) + j] = -sign_yi * (n_dist(generator) + sign_yi);
     }
@@ -188,11 +195,12 @@ real_t test4() {
   admm_data.x = x.data();
   admm_data.y = y.data();
 
-  real_t lambda = 1.0;
+  real_t lambda = static_cast<real_t>(1);
 
   admm_data.f.reserve(m);
   for (unsigned int i = 0; i < m; ++i)
-    admm_data.f.emplace_back(kMaxPos0, 1.0, -1.0, lambda);
+    admm_data.f.emplace_back(kMaxPos0, static_cast<real_t>(1),
+                             static_cast<real_t>(-1), lambda);
 
   admm_data.g.reserve(n + 1);
   for (unsigned int i = 0; i < n; ++i)
