@@ -1,5 +1,6 @@
 # User Vars
 GSLROOT=/usr/local
+CMLROOT=cml
 
 # C++ Flags
 CXX=g++
@@ -33,12 +34,8 @@ gpu: main.cpp solver_cu.o solver_cu_link.o
 solver_cu_link.o: solver_cu.o
 	$(CUXX) $(CUFLAGS) $< -dlink -o $@
 
-solver_cu.o: solver.cu solver.hpp prox_lib.hpp cml.cuh
+solver_cu.o: solver.cu solver.hpp prox_lib.hpp
 	$(CUXX) $(CUFLAGS) $< -dc -o $@
-
-# Chol Test
-chol_test: chol_test.cu
-	nvcc $< $(CUFLAGS) $(CULDFLAGS_) -lgsl -lm -I/usr/local/include -O3 -o $@
 
 clean:
 	rm -f *.o *~ *~ main

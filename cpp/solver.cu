@@ -3,7 +3,11 @@
 #include <algorithm>
 #include <vector>
 
-#include "cml.cuh"
+#include "cml/cml_blas.cuh"
+#include "cml/cml_linalg.cuh"
+#include "cml/cml_matrix.cuh"
+#include "cml/cml_vector.cuh"
+
 #include "solver.hpp"
 
 template <typename T>
