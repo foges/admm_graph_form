@@ -8,7 +8,7 @@ A Graph Form problem can be expressed as
 
 ```
 minimize        f(y) + g(x)
-subject to      y = A*x
+subject to      y = A * x
 ```
 where `f` and `g` are convex and can take on the values `R \cup {∞}`. The solver requires that the [proximal operators][prox_algs] of `f` and `g` are known and that `f` and `g` are separable, meaning that they can be written as
 
