@@ -76,7 +76,7 @@ end
 % Initialize Data.
 rng(0, 'twister')
 
-A = [-1 / n *rand(m - n, n); -eye(n)];
+A = -[4 / n * rand(m - n, n); eye(n)];
 b = A * rand(n, 1) + 0.2 * rand(m, 1);
 c = rand(n, 1);
 
@@ -88,7 +88,7 @@ if save_mat
 end
 
 % Declare proximal operators.
-g_prox = @(x, rho) x - c / rho;
+g_prox = @(x, rho) x - c ./ rho;
 f_prox = @(x, rho) min(b, x);
 obj_fn = @(x, y) c' * x;
 

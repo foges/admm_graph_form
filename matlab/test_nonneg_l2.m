@@ -70,9 +70,9 @@ end
 % Initialize Variables.
 rng(0, 'twister')
 
-n_half = floor(2 * n / 3);
-A = 1 / n * rand(m, n);
-b = A * [ones(n_half, 1); -ones(n - n_half, 1)] + 0.01 * randn(m, 1);
+n_half = floor(0.9 *  n);
+A = 2 / n * rand(m, n);
+b = A * [ones(n_half, 1); -ones(n - n_half, 1)] + randn(m, 1);
 
 % Export Matrices
 if save_mat
@@ -82,14 +82,14 @@ end
 
 % Declare proximal operators.
 g_prox = @(x, rho) max(x, 0);
-f_prox = @(x, rho) (x * rho + b) / (1 + rho);
+f_prox = @(x, rho) (x .* rho + b) ./ (1 + rho);
 obj_fn = @(x, y) 1 / 2 * norm(A * x - b) ^ 2;
 
 % Initialize ADMM input.
 params.rho = rho;
 params.quiet = quiet;
 params.MAXITR = 1000;
-params.RELTOL = 1e-4;
+params.RELTOL = 1e-3;
 
 % Solve using ADMM.
 tic
@@ -100,7 +100,7 @@ time_admm = toc;
 tic
 cvx_begin quiet
   variable x_cvx(n)
-  minimize(1/2 * (A * x_cvx - b)' * (A * x_cvx - b));
+  minimize(1 / 2 * (A * x_cvx - b)' * (A * x_cvx - b));
   subject to
     x_cvx >= 0;
 cvx_end

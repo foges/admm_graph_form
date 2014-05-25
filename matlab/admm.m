@@ -1,4 +1,4 @@
-function [x12, y12, factors] = admm(prox_f, prox_g, obj_fn, A, params, factors)
+function [x, y, factors, n_iter] = admm(prox_f, prox_g, obj_fn, A, params, factors)
 %%ADMM Generic graph projection splitting solver.
 %   Solves problems in the form
 %
@@ -7,8 +7,8 @@ function [x12, y12, factors] = admm(prox_f, prox_g, obj_fn, A, params, factors)
 % 
 %   where the proximal operators of the functions f and g are known.
 %
-%   [x12, factors] = admm(prox_f, prox_g, obj_fn, A)
-%   [x12, factors] = admm(prox_f, prox_g, obj_fn, A, params, factors)
+%   [x, factors] = admm(prox_f, prox_g, obj_fn, A)
+%   [x, factors] = admm(prox_f, prox_g, obj_fn, A, params, factors)
 % 
 %   Optional Inputs: params, factors
 %
@@ -91,6 +91,7 @@ RELTOL = get_or_default(params, 'RELTOL', 1e-2);
 MAXITR = get_or_default(params, 'MAXITR', 10000);
 rho    = get_or_default(params, 'rho', 1.0);
 quiet  = get_or_default(params, 'quiet', false);
+norml  = get_or_default(params, 'norml', true);
 
 L  = get_or_default(factors, 'L', []);
 D  = get_or_default(factors, 'D', []);
@@ -105,6 +106,18 @@ z = zeros(n + m, 1); zt = zeros(n + m, 1);
 
 % Start timer.
 total_time = tic;
+
+% Normalize A
+if norml
+  [A, d, e] = normalize(A);
+%   [re, rd] = gmscale(A, 0, 0.99);
+%   e = 1 ./ re;
+%   d = 1 ./ rd;
+%   A = diag(d) * A * diag(e);
+else
+  d = ones(m, 1);
+  e = ones(n, 1);
+end
 
 % Precompute AAt or AtA.
 if isempty(AA) && ~issparse(A)
@@ -124,8 +137,8 @@ for iter = 0:MAXITR-1
   % Evaluate proximal operators of f and g.
   %   y^{k+1/2} = prox(y^k - \tilde y^k)
   %   x^{k+1/2} = prox(x^k - \tilde x^k)
-  y12 = eval_prox(prox_f, y - yt, rho);
-  x12 = eval_prox(prox_g, x - xt, rho);
+  y12 = eval_prox(prox_f, y - yt, rho, 1 ./ d);
+  x12 = eval_prox(prox_g, x - xt, rho, e);
   z12 = [x12; y12];
 
   zprev = z; 
@@ -155,7 +168,7 @@ for iter = 0:MAXITR-1
   converged = iter > 1 && prires < eps_pri && duares < eps_dual;
   if ~quiet && (mod(iter, 10) == 0 || converged)
     fprintf('%4d :\t%.2e\t%.2e\t%.2e\t%.2e\t%.2e\n', ...
-        iter, prires, eps_pri, duares, eps_dual, obj_fn(x, y));
+        iter, prires, eps_pri, duares, eps_dual, obj_fn(x .* e, y ./ d));
   end
 
   if converged
@@ -175,6 +188,11 @@ factors.L = L;
 factors.D = D;
 factors.P = P;
 factors.AA = AA;
+n_iter = iter;
+
+% Scale output
+x = x12 .* e;
+y = y12 ./ d;
 
 if ~quiet
   fprintf('factorization time: %.2e seconds\n', factor_time);
@@ -184,17 +202,17 @@ end
 
 end
 
-function y = eval_prox(f_prox, x, rho)
+function y = eval_prox(f_prox, x, rho, d)
 % Evaluates the proximal operator(s) of f on x. f_prox may either be a 
 % function handle or a cell array of function handles.
 
 if iscell(f_prox)
   y = nan(size(x));
   for i = 1:length(f_prox)
-    y(i) = f_prox{i}(x(i), rho);
+    y(i) = f_prox{i}(x(i) * d(i), rho / d(i) ^ 2) / d(i);
   end
 else
-  y = f_prox(x, rho);
+  y = f_prox(x .* d, rho ./ d .^ 2) ./ d;
 end
 
 end
@@ -250,6 +268,21 @@ if isfield(input, var)
   output = input.(var);
 else
   output = default;
+end
+
+end
+
+function [ A, d, e ] = normalize( A )
+% Normalizes A along the larger dimension.
+
+if size(A, 1) <= size(A, 2)
+  d = sqrt(1 ./ sum(A .^ 2, 2));
+  e = ones(size(A, 2), 1);
+  A = bsxfun(@times, A, d);
+else
+  d = ones(size(A, 1), 1);
+  e = sqrt(1 ./ sum(A .^ 2, 1))';
+  A = bsxfun(@times, A, e');
 end
 
 end

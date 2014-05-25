@@ -1,36 +1,32 @@
-function results = test_svm(m, n, rho, quiet, save_mat)
-%%TEST_SVM Test ADMM on SVM fitting.
+function results = test_lasso(m, n, rho, quiet, save_mat)
+%%TEST_LASSO Test ADMM on an Lasso.
 %   Compares ADMM to CVX when solving the problem
 %
-%     minimize    (1/2) ||w||_2^2 + \lambda \sum (a_i^T * [w; b] + 1)_+.
+%     minimize    (1/2) * ||Ax - b||_2^2 + \lambda * ||x||_1
 %
 %   We transform this problem to
 %
 %     minimize    f(y) + g(x)
 %     subject to  y = A * x,
 %
-%   where g_{1..n}(x_i)   = (1/2) * w ^ 2
-%         g_{n+1}(x_i)    = 0
-%         f_(y_i)         = lambda * max(y_i + 1, 0).
+%   where g(x_i) = lambda * |x|
+%         f(y_i) = (1/2) * (y_i - b_i) ^ 2
 %
 %   Test data are generated as follows
-%     - Entries in A are given by the formula -y_j * [x_j^T, 1], where x_j
-%       is a "feature vector" and y_j is either -1 or +1 depending on
-%       which class the j'th feature belongs to. The x_j belonging to the
-%       first class are drawn from a normal distribution with mean [1..1]^T
-%       and covariance equal to the identity. The x_j belonging to the
-%       second class are generated in a simlar fashion, except the mean
-%       is equal to [-1..-1]^T. Half the training belong to the first class
-%       and the other half to the second class.
-%     - The parameter lambda is set to 1.0.
+%     - The entries in A are generated from a normal N(0, 1) distribution.
+%     - To generate b, we first choose a vector v with entries
+%       that are zero with probability 0.8 and otherwise drawn from
+%       a normal N(0, 1) distribution. b is then generated as
+%       b = A * v + w, where w is Gaussian noise with mean zero and 
+%       variance 0.5.
 %
-%   results = test_svm()
-%   results = test_svm(m, n, rho, quiet, save_mat)
+%   results = test_lasso()
+%   results = test_lasso(m, n, rho, quiet, save_mat)
 % 
 %   Optional Inputs: (m, n), rho, quiet, save_mat
 %
 %   Optional Inputs:
-%   (m, n)    - (default 1000, 100) Dimensions of the matrix A.
+%   (m, n)    - (default 1000, 200) Dimensions of the matrix A.
 %   
 %   rho       - (default 1.0) Penalty parameter to proximal operators.
 % 
@@ -53,21 +49,14 @@ function results = test_svm(m, n, rho, quiet, save_mat)
 %                 + time_admm: Time required by ADMM to solve problem.
 %                 + time_cvx: Time required by CVX to solve problem.
 %
-%   References:
-%   http://www.stanford.edu/~boyd/papers/admm/svm/linear_svm_example.html
-%     Formulation was taken form this example.
 
 % Parse inputs.
 if nargin < 2
-  m = 1000;
-  n = 100;
-elseif m < n
-  error('A must be a skinny matrix')
-elseif mod(m, 2) ~= 0
-  m = m + 1;
+  m = 400;
+  n = 200;
 end
 if nargin < 3
-  rho = 1.0;
+  rho = 0.1;
 end
 if nargin < 4
   quiet = false;
@@ -79,22 +68,20 @@ end
 % Initialize Data.
 rng(0, 'twister')
 
-lambda = 1.0;
-N = m / 2;
-
-x = 1 / n * [randn(N, n) + ones(N, n); randn(N, n) - ones(N, n)];
-y = [ones(N, 1); -ones(N, 1)];
-A = [(-y * ones(1, n)) .* x, -y];
+A = 5 / n * randn(m, n);
+b = A * ((rand(n, 1) > 0.8) .* randn(n, 1)) + 0.5 * randn(m, 1);
+lambda = 0.4 + 1e-4 * m;
 
 % Export Matrices
 if save_mat
-  mmwrite('data/A_svm.dat', A, 'Matrix A for test_svm.m')
+  mmwrite('data/A_lasso.dat', A, 'Matrix A for test_lasso.m')
+  mmwrite('data/b_lasso.dat', b, 'Matrix b for test_lasso.m')
 end
 
 % Declare proximal operators.
-f_prox = @(x, rho) max(0, x + 1 - lambda ./ rho) + min(0, x + 1) - 1;
-g_prox = @(x, rho) [rho(1:end - 1) .* x(1:end - 1) ./ (1 + rho(1:end - 1)); x(end)];
-obj_fn = @(x, y) 1 / 2 * norm(x(1:n)) ^ 2 + lambda * sum(max(0, y + 1));
+g_prox = @(x, rho) max(x - lambda ./ rho, 0) - max(-x - lambda ./ rho, 0);
+f_prox = @(x, rho) (rho .* x + b) ./ (1 + rho);
+obj_fn = @(x, y) 1 / 2 * norm(y - b) ^ 2 + lambda * norm(x, 1);
 
 % Initialize ADMM input.
 params.rho = rho;
@@ -104,15 +91,16 @@ params.RELTOL = 1e-3;
 
 % Solve using ADMM.
 tic
-x_admm = admm(f_prox, g_prox, obj_fn, A, params);
+[x_admm, ~, ~, n_iter] = admm(f_prox, g_prox, obj_fn, A, params);
 time_admm = toc;
 
 % Solve using CVX.
 tic
 cvx_begin quiet
-  variable x_cvx(n+1)
-  minimize(1 / 2 * x_cvx(1:n)' * x_cvx(1:n) + ...
-      lambda * sum(max(0, A * x_cvx + 1)));
+  variables x_cvx(n) y(m)
+  minimize(1 / 2 * (y - b)' * (y - b) + lambda * norm(x_cvx, 1));
+  subject to
+    A * x_cvx == y;
 cvx_end
 time_cvx = toc;
 
@@ -124,6 +112,7 @@ results.max_violation = nan;
 results.avg_violation = nan;
 results.time_admm = time_admm;
 results.time_cvx = time_cvx;
+results.n_iter = n_iter;
 
 % Print error metrics.
 if ~quiet

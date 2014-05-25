@@ -71,7 +71,7 @@ end
 % Initialize Data.
 rng(0, 'twister')
 
-A = rand(m, n);
+A = 4 / n * rand(m, n);
 b = A * rand(n, 1);
 c = rand(n, 1);
 
@@ -84,18 +84,18 @@ end
 
 % Declare proximal operators.
 g_prox = @(x, rho) max(x, 0);
-f_prox = @(x, rho) [b; x(end) - 1 / rho];
+f_prox = @(x, rho) [b; x(end) - 1 / rho(end)];
 obj_fn = @(x, y) c' * x;
 
 % Initialize ADMM input.
 params.rho = rho;
 params.quiet = quiet;
 params.MAXITR = 2000;
-params.RELTOL = 5e-5;
+params.RELTOL = 1e-4;
 
 % Solve using ADMM.
 tic
-x_admm = admm(f_prox, g_prox, obj_fn, [A; c'], params);
+[x_admm, ~, ~, n_iter] = admm(f_prox, g_prox, obj_fn, [A; c'], params);
 time_admm = toc;
 
 % Solve using CVX.
@@ -117,6 +117,7 @@ results.max_violation = max([abs(b - A * x_admm); max(-x_admm, 0)]);
 results.avg_violation = mean([abs(b - A * x_admm); max(-x_admm, 0)]);
 results.time_admm = time_admm;
 results.time_cvx = time_cvx;
+results.n_iter = n_iter;
 
 % Print error metrics.
 if ~quiet
