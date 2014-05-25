@@ -1,5 +1,5 @@
 function results = test_lasso(m, n, rho, quiet, save_mat)
-%%TEST_LASSO Test ADMM on an Lasso.
+%%TEST_LASSO Test ADMM on Lasso.
 %   Compares ADMM to CVX when solving the problem
 %
 %     minimize    (1/2) * ||Ax - b||_2^2 + \lambda * ||x||_1
