@@ -92,7 +92,8 @@ template <typename T>
 __DEVICE__ inline T ProxAbs(T x, T a, T b, T c, T d, T rho) {
   T x_ = a * (x - d / rho) - b;
   T rho_ = rho / (c * a * a);
-  T z  = MaxPos(x_ - static_cast<T>(1) / rho_) - MaxNeg(x_ + static_cast<T>(1));
+  T z = MaxPos(x_ - static_cast<T>(1) / rho_) -
+      MaxNeg(x_ + static_cast<T>(1) / rho_);
   return (z + b) / a;
 }
 
@@ -105,7 +106,7 @@ template <typename T>
 __DEVICE__ inline T ProxIdentity(T x, T a, T b, T c, T d, T rho) {
   T x_ = a * (x - d / rho) - b;
   T rho_ = rho / (c * a * a);
-  T z  = x_ - static_cast<T>(1) / rho_;
+  T z = x_ - static_cast<T>(1) / rho_;
   return (z + b) / a;
 }
 
@@ -169,7 +170,7 @@ template <typename T>
 __DEVICE__ inline T ProxSquare(T x, T a, T b, T c, T d, T rho) {
   T x_ = a * (x - d / rho) - b;
   T rho_ = rho / (c * a * a);
-  T z  = rho_ * x_ / (static_cast<T>(1) + rho_);
+  T z = rho_ * x_ / (static_cast<T>(1) + rho_);
   return (z + b) / a;
 }
 
