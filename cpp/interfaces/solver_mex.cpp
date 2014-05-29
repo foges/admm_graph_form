@@ -5,6 +5,8 @@
 
 #include "solver.hpp"
 
+// Converts Row -> Column Major
+// TODO: Do this block-wise.
 template <typename T>
 void RowToColMajor(const T *Arm, size_t m, size_t n, T *Acm) {
   for (unsigned int i = 0; i < m; ++i)
@@ -12,9 +14,12 @@ void RowToColMajor(const T *Arm, size_t m, size_t n, T *Acm) {
       Acm[j * m + i] = Arm[i * n + j];
 }
 
+// Populates a vector of function objects from a matlab struct
+// containing the fields (f, a, b, c, d). The latter 4 are optional,
+// while f is required. Each field (if present) is a vector of length n.
 template <typename T>
-int PopulateFunctionObj(unsigned int n, const mxArray *f_mex,
-                        std::vector<FunctionObj<T>> *f_admm) {
+int PopulateFunctionObj(const char fn_name[], const mxArray *f_mex,
+                        unsigned int n, std::vector<FunctionObj<T>> *f_admm) {
   char alpha[] = "f\0a\0b\0c\0d\0";
 
   int f_idx = mxGetFieldNumber(f_mex, &alpha[0]);
@@ -22,26 +27,27 @@ int PopulateFunctionObj(unsigned int n, const mxArray *f_mex,
   int b_idx = mxGetFieldNumber(f_mex, &alpha[4]);
   int c_idx = mxGetFieldNumber(f_mex, &alpha[6]);
   int d_idx = mxGetFieldNumber(f_mex, &alpha[8]);
-  
+
   if (f_idx == -1) {
       mexErrMsgIdAndTxt("MATLAB:solver:missingParam",
-          "Field [f/g].f must be specified.");
+          "Field %s.f is required.", fn_name);
       return 1;
   }
 
   void *f_data = 0, *a_data = 0, *b_data = 0, *c_data = 0, *d_data = 0;
-  mxClassID f_id, a_id, b_id, c_id, d_id; 
+  mxClassID f_id, a_id, b_id, c_id, d_id;
 
+  // Find index and pointer to data of (f, a, b, c, d) in struct if present.
   mxArray *f_arr = mxGetFieldByNumber(f_mex, 0, f_idx);
   f_data = mxGetPr(f_arr);
   f_id = mxGetClassID(f_arr);
   if (!(mxGetM(f_arr) == n && mxGetN(f_arr) == 1) &&
       !(mxGetN(f_arr) == n && mxGetM(f_arr) == 1)) {
     mexErrMsgIdAndTxt("MATLAB:solver:dimensionMismatch",
-        "Dimension of [f/g].f and corresponding dimension of A must match.");
+        "Dimension of %s.f and corresponding dimension of A must match.",
+        fn_name);
     return 1;
   }
-
   if (a_idx != -1) {
     mxArray *a_arr = mxGetFieldByNumber(f_mex, 0, a_idx);
     a_data = mxGetPr(a_arr);
@@ -49,7 +55,7 @@ int PopulateFunctionObj(unsigned int n, const mxArray *f_mex,
     if (!(mxGetM(a_arr) == n && mxGetN(a_arr) == 1) &&
         !(mxGetN(a_arr) == n && mxGetM(a_arr) == 1)) {
       mexErrMsgIdAndTxt("MATLAB:solver:dimensionMismatch",
-          "Dimension of [f/g].a and [f/g].f must match.");
+          "Dimension of %s.a and [f/g].f must match.", fn_name);
       return 1;
     }
   }
@@ -60,7 +66,7 @@ int PopulateFunctionObj(unsigned int n, const mxArray *f_mex,
     if (!(mxGetM(b_arr) == n && mxGetN(b_arr) == 1) &&
         !(mxGetN(b_arr) == n && mxGetM(b_arr) == 1)) {
       mexErrMsgIdAndTxt("MATLAB:solver:dimensionMismatch",
-          "Dimension of [f/g].b and [f/g].f must match.");
+          "Dimension of %s.b and [f/g].f must match.", fn_name);
       return 1;
     }
   }
@@ -71,22 +77,23 @@ int PopulateFunctionObj(unsigned int n, const mxArray *f_mex,
     if (!(mxGetM(c_arr) == n && mxGetN(c_arr) == 1) &&
         !(mxGetN(c_arr) == n && mxGetM(c_arr) == 1)) {
       mexErrMsgIdAndTxt("MATLAB:solver:dimensionMismatch",
-          "Dimension of [f/g].c and [f/g].f must match.");
+          "Dimension of %s.c and [f/g].f must match.", fn_name);
       return 1;
     }
   }
   if (d_idx != -1) {
     mxArray *d_arr = mxGetFieldByNumber(f_mex, 0, d_idx);
     d_data = mxGetPr(d_arr);
-    d_id = mxGetClassID(d_arr);  
+    d_id = mxGetClassID(d_arr);
     if (!(mxGetM(d_arr) == n && mxGetN(d_arr) == 1) &&
         !(mxGetN(d_arr) == n && mxGetM(d_arr) == 1)) {
       mexErrMsgIdAndTxt("MATLAB:solver:dimensionMismatch",
-          "Dimension of [f/g].d and [f/g].f must match.");
+          "Dimension of %s.d and [f/g].f must match.", fn_name);
       return 1;
     }
   }
 
+  // Populate f_admm.
   for (unsigned int i = 0; i < n; ++i) {
     T a = static_cast<T>(1);
     T b = static_cast<T>(0);
@@ -94,6 +101,7 @@ int PopulateFunctionObj(unsigned int n, const mxArray *f_mex,
     T d = static_cast<T>(0);
     Function f;
 
+    // f may be of class double/float/int[32/64]/uint[32/64].
     if (f_id == mxDOUBLE_CLASS) {
       f = static_cast<Function>(reinterpret_cast<double*>(f_data)[i]);
     } else if (f_id == mxSINGLE_CLASS) {
@@ -108,60 +116,61 @@ int PopulateFunctionObj(unsigned int n, const mxArray *f_mex,
       f = static_cast<Function>(reinterpret_cast<unsigned long*>(f_data)[i]);
     } else {
       mexErrMsgIdAndTxt("MATLAB:solver:inputNotNumeric",
-          "Function type [f/g].f must be double, single, int[32/64], uint[32/64].");
+          "Function type %s.f must be double/float/int[32/64]/uint[32/64].",
+          fn_name);
       return 1;
     }
 
+    // (a, b, c, d) must be of class double or float.
     if (a_data != 0 && a_id == mxDOUBLE_CLASS) {
       a = static_cast<T>(reinterpret_cast<double*>(a_data)[i]);
     } else if (a_data != 0 && a_id ==  mxSINGLE_CLASS) {
       a = static_cast<T>(reinterpret_cast<float*>(a_data)[i]);
     } else if (a_data != 0) {
       mexErrMsgIdAndTxt("MATLAB:solver:inputNotNumeric",
-          "Function parameter [f/g].a must be double or single.");
+          "Function parameter %s.a must be double or single.", fn_name);
       return 1;
     }
-
     if (b_data != 0 && b_id == mxDOUBLE_CLASS) {
       b = static_cast<T>(reinterpret_cast<double*>(b_data)[i]);
     } else if (b_data != 0 && b_id == mxSINGLE_CLASS) {
       b = static_cast<T>(reinterpret_cast<float*>(b_data)[i]);
     } else if (b_data != 0) {
       mexErrMsgIdAndTxt("MATLAB:solver:inputNotNumeric",
-          "Function parameter [f/g].b must be double or single.");
+          "Function parameter %s.b must be double or single.", fn_name);
       return 1;
     }
-
     if (c_data != 0 && c_id == mxDOUBLE_CLASS) {
       c = static_cast<T>(reinterpret_cast<double*>(c_data)[i]);
     } else if (c_data != 0 && c_id == mxSINGLE_CLASS) {
       c = static_cast<T>(reinterpret_cast<float*>(c_data)[i]);
     } else if (c_data != 0) {
       mexErrMsgIdAndTxt("MATLAB:solver:inputNotNumeric",
-          "Function parameter [f/g].c must be double or single.");
+          "Function parameter %s.c must be double or single.", fn_name);
       return 1;
-    } 
-
+    }
     if (d_data != 0 && d_id == mxDOUBLE_CLASS) {
       d = static_cast<T>(reinterpret_cast<double*>(d_data)[i]);
     } else if (d_data != 0 && d_id == mxSINGLE_CLASS) {
       d = static_cast<T>(reinterpret_cast<float*>(d_data)[i]);
     } else if (d_data != 0) {
       mexErrMsgIdAndTxt("MATLAB:solver:inputNotNumeric",
-          "Function parameter [f/g].d must be double or single.");
+          "Function parameter %s.d must be double or single.", fn_name);
       return 1;
     }
-    //printf("(%d, %e, %e, %e, %e)\n", f, a, b, c, d);
+
     f_admm->emplace_back(f, a, b, c, d);
   }
   return 0;
 }
 
+// Wrapper for graph solver. Populates admm_data structure and calls solver.
 template <typename T>
 void SolverWrap(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
-  size_t m = mxGetM(prhs[0]); 
+  size_t m = mxGetM(prhs[0]);
   size_t n = mxGetN(prhs[0]);
-  
+
+  // Convert column major (matlab) to row major (c++).
   T* A = new T[m * n];
   RowToColMajor(reinterpret_cast<T*>(mxGetPr(prhs[0])), n, m, A);
 
@@ -172,12 +181,13 @@ void SolverWrap(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
   if (nlhs == 2)
     admm_data.y = reinterpret_cast<T*>(mxGetPr(plhs[1]));
 
-  int err = PopulateFunctionObj(m, prhs[1], &admm_data.f);
-  if (err) return;
-  err = PopulateFunctionObj(n, prhs[2], &admm_data.g);
-  if (err) return;
-  
-  Solver(&admm_data);
+  int err = PopulateFunctionObj("f", prhs[1], m, &admm_data.f);
+  if (err == 0)
+    err = PopulateFunctionObj("g", prhs[2], n, &admm_data.g);
+
+  if (err == 0)
+    Solver(&admm_data);
+
   delete [] A;
 }
 
@@ -193,7 +203,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
         "Usage: [x, y] = solver(A, f, g, [params])");
     return;
   }
-  
+
   mxClassID class_id_A = mxGetClassID(prhs[0]);
   mxClassID class_id_f = mxGetClassID(prhs[1]);
   mxClassID class_id_g = mxGetClassID(prhs[2]);
@@ -213,7 +223,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
         "Function g must be a struct.");
     return;
   }
-  
+
   plhs[0] = mxCreateNumericMatrix(mxGetN(prhs[0]), 1, class_id_A, mxREAL);
   if (nlhs == 2)
     plhs[1] = mxCreateNumericMatrix(mxGetM(prhs[0]), 1, class_id_A, mxREAL);

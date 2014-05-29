@@ -132,9 +132,9 @@ void Solver(AdmmData<T, M> *admm_data) {
 
   // Copy results to output.
   if (admm_data->y != 0)
-    cml::vector_memcpy(admm_data->y, &y12);
+    cml::vector_memcpy(admm_data->y, &y);
   if (admm_data->x != 0)
-    cml::vector_memcpy(admm_data->x, &x12);
+    cml::vector_memcpy(admm_data->x, &x);
 
   // Free up memory.
   cml::matrix_free(&L);
