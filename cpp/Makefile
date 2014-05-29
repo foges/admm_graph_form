@@ -8,7 +8,7 @@ CXXFLAGS=-g -O3 -Wall -Wconversion -std=c++11 -I$(GSLROOT)/include #-fopenmp
 
 # CUDA Flags
 CUXX=nvcc
-CUFLAGS=-arch=sm_20 -lineinfo -v -ccbin=/usr/bin/gcc
+CUFLAGS=-arch=sm_20 -lineinfo
 CULDFLAGS=-lcudart -lcublas
 
 # Check System Args.

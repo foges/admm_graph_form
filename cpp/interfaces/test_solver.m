@@ -24,10 +24,10 @@ tic
 admm_time = toc;
 
 tic
-% cvx_begin
-%   variable x_cvx(n)
-%   minimize(1 / 2 * sum_square_abs(A * x_cvx - b) + lambda * norm(x_cvx, 1))
-% cvx_end
+cvx_begin
+  variable x_cvx(n)
+  minimize(1 / 2 * sum_square_abs(A * x_cvx - b) + lambda * norm(x_cvx, 1))
+cvx_end
 cvx_time = toc;
 
 fprintf('admm_optval: %e, admm_time: %e\n', ...

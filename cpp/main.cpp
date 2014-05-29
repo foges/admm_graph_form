@@ -2,6 +2,7 @@
 #include <vector>
 
 #include "solver.hpp"
+#include "timer.hpp"
 
 typedef double real_t;
 
@@ -211,10 +212,67 @@ real_t test4() {
   return 0;
 }
 
+// Lasso
+//   minimize    (1/2) ||Ax - b||_2^2 + \lambda ||x||_1
+//
+// See <admm_graph_form>/matlab/test_lasso.m for detailed description.
+real_t test5(size_t m, size_t n) {
+  printf("\nSupport Vector Machine.\n");
+  std::vector<real_t> A(m * n);
+  std::vector<real_t> b(m);
+  std::vector<real_t> x(n);
+  std::vector<real_t> y(m);
+
+  std::default_random_engine generator;
+  std::uniform_real_distribution<real_t> u_dist(static_cast<real_t>(0),
+                                                static_cast<real_t>(1));
+  std::normal_distribution<real_t> n_dist(static_cast<real_t>(0),
+                                          static_cast<real_t>(1));
+
+  for (unsigned int i = 0; i < m * n; ++i)
+    A[i] = 1 / static_cast<real_t>(n) * n_dist(generator);
+
+  std::vector<real_t> x_true(n);
+  for (unsigned int i = 0; i < n; ++i)
+    x_true[i] = u_dist(generator) < 0.8 ? 0 : n_dist(generator);
+
+  for (unsigned int i = 0; i < m; ++i) {
+    for (unsigned int j = 0; j < n; ++j)
+      b[i] += A[i * n + j] * x_true[j];
+    b[i] += 0.5 * n_dist(generator);
+  }
+
+  AdmmData<real_t, real_t*> admm_data(A.data(), m, n);
+  admm_data.x = x.data();
+  admm_data.y = y.data();
+
+  real_t lambda = static_cast<real_t>(2e-2 + 5e-6 * static_cast<real_t>(m));
+
+  admm_data.f.reserve(m);
+  for (unsigned int i = 0; i < m; ++i)
+    admm_data.f.emplace_back(kSquare, static_cast<real_t>(1), b[i]);
+
+  admm_data.g.reserve(n);
+  for (unsigned int i = 0; i < n; ++i)
+    admm_data.g.emplace_back(kAbs, lambda);
+
+  double t = timer();
+  Solver(&admm_data);
+  printf("%lu, %e\n", m, timer() - t);
+
+  return 0;
+}
+
 int main() {
-  test1();
-  /// test2();
+  // test1();
+  // test2();
   // test3();
   // test4();
+  size_t dim[] = {
+      600, 743, 921, 1141, 1413, 1751, 2170, 2689, 3331, 4128, 5114,
+      6337, 7851, 9728, 12053, 14933, 18502, 22924, 28403, 35191, 43602,
+      54022, 66933, 82930, 102749, 127306, 157731, 195427, 242132, 299999 };
+  for (unsigned int i = 0; i < 30; ++i)
+    test5(dim[i], 500);
 }
 
