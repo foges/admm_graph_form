@@ -10,11 +10,16 @@
 
 #include "solver.hpp"
 
+#ifdef __MEX__
+#define printf mexPrintf
+extern "C" int mexPrintf(const char* fmt, ...);
+#endif  // __MEX__
+
 template <typename T>
 void RowToColMajor(const T *Arm, size_t m, size_t n, T *Acm);
 
-template <typename T>
-void Solver(AdmmData<T> *admm_data) {
+template <typename T, typename M>
+void Solver(AdmmData<T, M> *admm_data) {
   // Extract values from admm_data
   size_t n = admm_data->n;
   size_t m = admm_data->m;
@@ -125,8 +130,11 @@ void Solver(AdmmData<T> *admm_data) {
     cml::vector_memcpy(&z_prev, &z);
   }
 
-  cml::vector_memcpy(admm_data->y, &y12);
-  cml::vector_memcpy(admm_data->x, &x12);
+  // Copy results to output.
+  if (admm_data->y != 0)
+    cml::vector_memcpy(admm_data->y, &y12);
+  if (admm_data->x != 0)
+    cml::vector_memcpy(admm_data->x, &x12);
 
   // Free up memory.
   cml::matrix_free(&L);
@@ -145,6 +153,6 @@ void RowToColMajor(const T *Arm, size_t m, size_t n, T *Acm) {
       Acm[j * m + i] = Arm[i * n + j];
 }
 
-template void Solver<double>(AdmmData<double> *);
-template void Solver<float>(AdmmData<float> *);
+template void Solver<double>(AdmmData<double, double*> *);
+template void Solver<float>(AdmmData<float, float*> *);
 

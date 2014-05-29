@@ -4,16 +4,17 @@ CMLROOT=cml
 
 # C++ Flags
 CXX=g++
-CXXFLAGS=-g -O3 -Wall -Wconversion -std=c++11 -I$(GSLROOT)/include -fopenmp
+CXXFLAGS=-g -O3 -Wall -Wconversion -std=c++11 -I$(GSLROOT)/include #-fopenmp
 
 # CUDA Flags
 CUXX=nvcc
-CUFLAGS=-arch=sm_20 -lineinfo
+CUFLAGS=-arch=sm_20 -lineinfo -v -ccbin=/usr/bin/gcc
 CULDFLAGS=-lcudart -lcublas
 
+# Check System Args.
 UNAME = $(shell uname -s)
 ifeq ($(UNAME), Darwin)
-LDFLAGS= -lgsl -framework Accelerate -lm
+LDFLAGS=-lgsl -framework Accelerate -lm
 CULDFLAGS_=-L/usr/local/cuda/lib -L/usr/local/lib $(CULDFLAGS)
 else
 LDFLAGS=-lgsl -lgslcblas -lm
@@ -25,7 +26,7 @@ cpu: main.cpp solver.o
 	$(CXX) $(CXXFLAGS) $(LDFLAGS) $^ -o main
 
 solver.o: solver.cpp solver.hpp prox_lib.hpp
-	$(CXX) $(CXXFLAGS) $< -c -o $@
+	$(CXX) $(CXXFLAGS) $(IFLAGS) $< -c -o $@
 
 # GPU
 gpu: main.cpp solver_cu.o solver_cu_link.o
@@ -35,7 +36,7 @@ solver_cu_link.o: solver_cu.o
 	$(CUXX) $(CUFLAGS) $< -dlink -o $@
 
 solver_cu.o: solver.cu solver.hpp prox_lib.hpp
-	$(CUXX) $(CUFLAGS) $< -dc -o $@
+	$(CUXX) $(CUFLAGS) $(IFLAGS) $< -dc -o $@
 
 clean:
 	rm -f *.o *~ *~ main

@@ -6,10 +6,16 @@
 #include <algorithm>
 #include <vector>
 
+#include "timer.hpp"
 #include "solver.hpp"
 
+#ifdef __MEX__
+#define printf mexPrintf
+extern "C" int mexPrintf(const char* fmt, ...);
+#endif  // __MEX__
+
 template<>
-void Solver(AdmmData<double> *admm_data) {
+void Solver(AdmmData<double, double*> *admm_data) {
   // Extract values from admm_data
   size_t n = admm_data->n;
   size_t m = admm_data->m;
@@ -105,10 +111,10 @@ void Solver(AdmmData<double> *admm_data) {
   }
 
   // Copy results to output.
-  for (unsigned int i = 0; i < m; ++i)
-    admm_data->y[i] = gsl_vector_get(&y12.vector, i);
-  for (unsigned int i = 0; i < n; ++i)
-    admm_data->x[i] = gsl_vector_get(&x12.vector, i);
+  for (unsigned int i = 0; i < m && admm_data->y != 0; ++i)
+    admm_data->y[i] = gsl_vector_get(&y.vector, i);
+  for (unsigned int i = 0; i < n && admm_data->x != 0; ++i)
+    admm_data->x[i] = gsl_vector_get(&x.vector, i);
 
   // Free up memory.
   gsl_matrix_free(L);

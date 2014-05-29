@@ -13,7 +13,7 @@ typedef double real_t;
 real_t test1() {
   printf("\nNon-Negative Least Squares.\n");
   size_t m = 1000;
-  size_t n = 200;
+  size_t n = 100;
   std::vector<real_t> A(m * n);
   std::vector<real_t> x(n);
   std::vector<real_t> y(m);
@@ -29,7 +29,7 @@ real_t test1() {
   for (unsigned int i = 0; i < m * n; ++i)
     A[i] = static_cast<real_t>(1) / static_cast<real_t>(n) * u_dist(generator);
 
-  AdmmData<real_t> admm_data(A.data(), m, n);
+  AdmmData<real_t, real_t*> admm_data(A.data(), m, n);
   admm_data.x = x.data();
   admm_data.y = y.data();
 
@@ -79,7 +79,7 @@ real_t test2() {
   for (unsigned int i = static_cast<unsigned int>(n * n); i < m * n; ++i)
     A[i] = i % (n + 1) == 0 ? static_cast<real_t>(-1) : static_cast<real_t>(0);
 
-  AdmmData<real_t> admm_data(A.data(), m, n);
+  AdmmData<real_t, real_t*> admm_data(A.data(), m, n);
   admm_data.x = x.data();
   admm_data.y = y.data();
 
@@ -130,7 +130,7 @@ real_t test3() {
   for (unsigned int i = 0; i < (m + 1) * n; ++i)
     A[i] = u_dist(generator);
 
-  AdmmData<real_t> admm_data(A.data(), m + 1, n);
+  AdmmData<real_t, real_t*> admm_data(A.data(), m + 1, n);
   admm_data.x = x.data();
   admm_data.y = y.data();
 
@@ -191,7 +191,7 @@ real_t test4() {
     A[i * (n + 1) + n] = -sign_yi;
   }
 
-  AdmmData<real_t> admm_data(A.data(), m, n + 1);
+  AdmmData<real_t, real_t*> admm_data(A.data(), m, n + 1);
   admm_data.x = x.data();
   admm_data.y = y.data();
 
@@ -213,8 +213,8 @@ real_t test4() {
 
 int main() {
   test1();
-  test2();
-  test3();
-  test4();
+  /// test2();
+  // test3();
+  // test4();
 }
 
